@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="medicare834-conceptual" name="Medicare 834 Conceptual Model">
+    <mxGraphModel dx="2054" dy="1137" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="EKc976mFjbLnR7At9cXp-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#B8C4D6;strokeWidth=1.5;fontColor=#344563;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=12;" value="Analytics Warehouse (OLAP)" vertex="1">
+          <mxGeometry height="195.5" width="790" x="310" y="134.5" as="geometry" />
+        </mxCell>
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#172B4D;" value="Medicare 834 — Conceptual Model&amp;nbsp;" vertex="1">
+          <mxGeometry height="40" width="420" x="581" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=13;fontColor=#5E6C84;" value="High-level flow from 834 enrollment input to mordern operational data, analytics, reporting and LLM consumption" vertex="1">
+          <mxGeometry height="28" width="710" x="430" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="inputLane" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F7FB;strokeColor=#B8C4D6;strokeWidth=1.5;fontColor=#344563;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=12;" value="INPUT &amp; INGESTION" vertex="1">
+          <mxGeometry height="205" width="230" x="50" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="EKc976mFjbLnR7At9cXp-9" edge="1" parent="1" source="processLane" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#e3c800;strokeColor=#B09500;" target="EKc976mFjbLnR7At9cXp-7" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="325" y="350" />
+              <mxPoint x="650" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="processLane" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#B8C4D6;strokeWidth=1.5;fontColor=#344563;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=12;" value="INPUT BATCH PROCESSING" vertex="1">
+          <mxGeometry height="610" width="590" x="30" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="EKc976mFjbLnR7At9cXp-10" edge="1" parent="1" source="dataLane" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#e3c800;strokeColor=#B09500;" target="EKc976mFjbLnR7At9cXp-7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EKc976mFjbLnR7At9cXp-11" connectable="0" parent="EKc976mFjbLnR7At9cXp-10" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 244, 195));&quot;&gt;Required data&lt;/span&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.1472" y="2" as="geometry">
+            <mxPoint x="-93" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2cVcu2TlxQo_kCsOEhOe-6" edge="1" parent="1" source="dataLane" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="consumptionLane">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dataLane" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#B8C4D6;strokeWidth=1.5;fontColor=#344563;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=12;" value="OPERATIONAL DB (OLTP)" vertex="1">
+          <mxGeometry height="600" width="390" x="690" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="consumptionLane" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F7FB;strokeColor=#B8C4D6;strokeWidth=1.5;fontColor=#344563;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=12;" value="REPORTING &amp;amp; RAG" vertex="1">
+          <mxGeometry height="830" width="300" x="1130" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="file834" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4C7DFF;strokeWidth=2;fontColor=#172B4D;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;X12 834 File&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Benefit Enrollment &amp;amp; Maintenance&lt;/span&gt;" vertex="1">
+          <mxGeometry height="88" width="174" x="70" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="parser" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F0;strokeColor=#36A269;strokeWidth=2;fontColor=#173B2A;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;834 Parser / Ingestion&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;EDI segment parsing&lt;/span&gt;" vertex="1">
+          <mxGeometry height="90" width="210" x="52" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="canonical" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F0;strokeColor=#36A269;strokeWidth=2;fontColor=#173B2A;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Canonical Enrollment Model&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Normalized member / plan / coverage data&lt;/span&gt;" vertex="1">
+          <mxGeometry height="90" width="220" x="47" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="validation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5E5;strokeColor=#D99A1F;strokeWidth=2;fontColor=#5C430F;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Validation &amp;amp; Data Quality&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Syntax • business rules • referential checks&lt;/span&gt;" vertex="1">
+          <mxGeometry height="92" width="220" x="52" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="csv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0ECFF;strokeColor=#8064C7;strokeWidth=2;fontColor=#35275E;fontSize=13;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;CSV / Batch Dataset&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Interchange format when required&lt;/span&gt;" vertex="1">
+          <mxGeometry height="78" width="210" x="366" y="462" as="geometry" />
+        </mxCell>
+        <mxCell id="staging" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4C7DFF;strokeWidth=2;fontColor=#172B4D;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Staging Tables&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Raw / transformed load area&lt;/span&gt;" vertex="1">
+          <mxGeometry height="78" width="220" x="361" y="718.5" as="geometry" />
+        </mxCell>
+        <mxCell id="oltp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4C7DFF;strokeWidth=2.2;fontColor=#172B4D;fontSize=15;align=center;verticalAlign=middle;spacing=8;" value="&lt;span style=&quot;color: rgb(94, 108, 132);&quot;&gt;&lt;b&gt;Plan Assignment&amp;nbsp;&lt;br&gt;&lt;/b&gt;&lt;/span&gt;&lt;font color=&quot;#8692a6&quot;&gt;&lt;span style=&quot;font-size: 11px;&quot;&gt;Plan Assignment based on input data&lt;/span&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="95" width="300" x="740" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="olap" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad9d5;strokeColor=#ae4132;strokeWidth=2.2;fontSize=15;align=center;verticalAlign=middle;spacing=8;" value="&lt;span style=&quot;color: rgb(94, 108, 132);&quot;&gt;&lt;b&gt;LAKEHOUSE&lt;br&gt;&lt;/b&gt;&lt;/span&gt;&lt;span style=&quot;font-size: 11px; color: rgb(94, 108, 132);&quot;&gt;Historical, dimensional / curated analytics data&lt;/span&gt;" vertex="1">
+          <mxGeometry height="95" width="300" x="560" y="193" as="geometry" />
+        </mxCell>
+        <mxCell id="reporting" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F0;strokeColor=#36A269;strokeWidth=2;fontColor=#173B2A;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Reporting / BI&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Operational &amp;amp; analytical reports&lt;/span&gt;" vertex="1">
+          <mxGeometry height="90" width="220" x="1160" y="796.5" as="geometry" />
+        </mxCell>
+        <mxCell id="semantic" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5E5;strokeColor=#D99A1F;strokeWidth=2;fontColor=#5C430F;fontSize=14;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Semantic / Retrieval Layer&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Governed context for AI&lt;/span&gt;" vertex="1">
+          <mxGeometry height="82" width="220" x="1170" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE9F0;strokeColor=#C84B78;strokeWidth=2.2;fontColor=#5B1834;fontSize=15;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;LLM / AI Assistant&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#5E6C84&quot;&gt;Natural-language analysis &amp;amp; Q&amp;amp;A&lt;/span&gt;" vertex="1">
+          <mxGeometry height="90" width="220" x="1170" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="2cVcu2TlxQo_kCsOEhOe-1" edge="1" parent="1" source="quarantine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#CC0000);" target="reporting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="2cVcu2TlxQo_kCsOEhOe-2" connectable="0" parent="2cVcu2TlxQo_kCsOEhOe-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;font color=&quot;#ff3333&quot;&gt;Rejected Report&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.0595" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="quarantine" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF0F0;strokeColor=#D9534F;strokeWidth=2;fontColor=#6B1E1A;fontSize=13;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Rejected Records&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 11px; color: rgb(94, 108, 132);&quot;&gt;Invalid records for remediation&lt;/span&gt;" vertex="1">
+          <mxGeometry height="58" width="220" x="200" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="file834" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4C7DFF;endArrow=block;endFill=1;" target="parser" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="parser" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#36A269;endArrow=block;endFill=1;" target="canonical" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="canonical" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;strokeColor=#6B778C;fontSize=11;fontColor=#5E6C84;endArrow=block;endFill=1;" target="validation" value="normalized records">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;strokeColor=#36A269;fontSize=11;fontColor=#2E7D53;endArrow=block;endFill=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="csv" value="valid">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;strokeColor=#D9534F;fontSize=11;fontColor=#A33A36;dashed=1;endArrow=block;endFill=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="quarantine" value="invalid">
+          <mxGeometry relative="1" x="-0.0667" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="csv" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;strokeColor=#8064C7;fontSize=11;fontColor=#5F4A98;endArrow=block;endFill=1;" target="staging" value="batch load">
+          <mxGeometry relative="1" x="-0.5556" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="staging" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4C7DFF;fontSize=11;fontColor=#405FBD;endArrow=block;endFill=1;" target="oltp" value="ETL">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="dataLane" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.8;strokeColor=#36A269;fontSize=11;fontColor=#2E7D53;endArrow=block;endFill=1;exitX=1.005;exitY=0.655;exitDx=0;exitDy=0;exitPerimeter=0;" target="reporting" value="operational reporting">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1110" y="763" />
+              <mxPoint x="1110" y="760" />
+              <mxPoint x="1270" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="semantic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#C84B78;fontSize=11;fontColor=#9E3C62;endArrow=block;endFill=1;" target="llm" value="context / retrieval">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EKc976mFjbLnR7At9cXp-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#4C7DFF;strokeWidth=2.2;fontColor=#172B4D;fontSize=15;align=center;verticalAlign=middle;spacing=8;" value="&lt;span style=&quot;color: rgb(94, 108, 132);&quot;&gt;&lt;b&gt;Enrollement DB&lt;br&gt;&lt;/b&gt;&lt;/span&gt;&lt;span style=&quot;font-size: 11px; color: rgb(94, 108, 132);&quot;&gt;Vaild enrollment records&lt;/span&gt;" vertex="1">
+          <mxGeometry height="95" width="300" x="740" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="EKc976mFjbLnR7At9cXp-5" edge="1" parent="1" source="oltp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4C7DFF;fontSize=11;fontColor=#405FBD;endArrow=block;endFill=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="EKc976mFjbLnR7At9cXp-3" value="ETL">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810" y="760" as="sourcePoint" />
+            <mxPoint x="969" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2cVcu2TlxQo_kCsOEhOe-7" edge="1" parent="1" source="EKc976mFjbLnR7At9cXp-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.003;entryY=0.476;entryDx=0;entryDy=0;entryPerimeter=0;" target="consumptionLane">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1110" y="232.3" />
+              <mxPoint x="1110" y="535.1" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
