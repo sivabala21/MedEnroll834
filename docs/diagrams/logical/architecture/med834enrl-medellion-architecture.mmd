@@ -1,0 +1,63 @@
+---
+config:
+  theme: redux
+  layout: elk
+  look: neo
+---
+flowchart TB
+ subgraph SOURCE["SOURCE / LANDING"]
+    direction TB
+        S1["834 EDI File"]
+        S2["S3 Landing Zone"]
+  end
+ subgraph BRONZE["BRONZE — RAW DATA"]
+    direction TB
+        B1["Raw 834 Data"]
+        B2["Original Source Structure"]
+        B3["Ingestion Metadata"]
+  end
+ subgraph SILVER["SILVER — VALIDATED & CONFORMED DATA"]
+    direction TB
+        SL1["Parsed 834 Segments"]
+        SL2["Standardized Enrollment Data"]
+        SL3["Data Quality Validation"]
+        SL4["Business Rule Validation"]
+        SL5["Rejected Records"]
+  end
+ subgraph GOLD["GOLD — BUSINESS-READY DATA"]
+    direction TB
+        G1["DIM_MEMBER"]
+        G2["DIM_PLAN"]
+        G3["DIM_GROUP"]
+        G4["DIM_DATE"]
+        G5["DIM_TRANSACTION_SOURCE"]
+        F1["FACT_ENROLLMENT"]
+  end
+ subgraph CONSUMPTION["DATA CONSUMPTION"]
+    direction TB
+        C1["Databricks SQL"]
+        C2["BI / Dashboards"]
+        C3["Natural Language Analytics"]
+  end
+    B1 --- B2 & B3
+    SL1 --> SL2
+    SL2 --> SL3
+    SL3 -- Valid --> SL4
+    SL3 -- Invalid --> SL5
+    G1 --> F1
+    G2 --> F1
+    G3 --> F1
+    G4 --> F1
+    G5 --> F1
+    S1 --> S2
+    S2 --> B1
+    B1 --> SL1
+    SL4 --> G1 & G2 & G3 & G4 & G5 & F1
+    F1 --> C1
+    C1 --> C2 & C3
+
+    style BRONZE fill:#CD7F32
+    style SILVER fill:#C0C0C0
+    style GOLD fill:#FFD700
+    style CONSUMPTION fill:#ffffff
+    style SOURCE fill:#ffffff

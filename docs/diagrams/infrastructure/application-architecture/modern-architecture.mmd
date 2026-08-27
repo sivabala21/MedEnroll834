@@ -1,0 +1,217 @@
+
+flowchart LR
+
+    %% ============================================================
+    %% SOURCE
+    %% ============================================================
+
+    subgraph SOURCE["SOURCE SYSTEM"]
+        direction TB
+
+        EDI["834 EDI File"]
+    end
+
+
+    %% ============================================================
+    %% STORAGE
+    %% ============================================================
+
+    subgraph STORAGE["CLOUD STORAGE"]
+        direction TB
+
+        S3["Amazon S3<br/>Landing / Data Lake"]
+    end
+
+
+    %% ============================================================
+    %% ORCHESTRATION
+    %% ============================================================
+
+    subgraph ORCH["ORCHESTRATION"]
+        direction TB
+
+        AF["Apache Airflow"]
+
+        D1["Ingestion Job"]
+        D2["Validation Job"]
+        D3["OLTP Load Job"]
+        D4["Lakehouse Transform Job"]
+        D5["DQ / Reconciliation Job"]
+
+        AF --> D1
+        AF --> D2
+        AF --> D3
+        AF --> D4
+        AF --> D5
+    end
+
+
+    %% ============================================================
+    %% DATABRICKS
+    %% ============================================================
+
+    subgraph DBX["DATABRICKS DATA PLATFORM"]
+        direction TB
+
+        P["PySpark<br/>Distributed Processing"]
+
+        B["BRONZE<br/>Raw Delta"]
+
+        SV["SILVER<br/>Validated & Conformed Delta"]
+
+        G["GOLD<br/>Business-Ready Delta"]
+
+        P --> B
+        B --> SV
+        SV --> G
+    end
+
+
+    %% ============================================================
+    %% OPERATIONAL DATABASE
+    %% ============================================================
+
+    subgraph OLTP["OPERATIONAL DATA STORE"]
+        direction TB
+
+        PG["PostgreSQL<br/>OLTP"]
+
+        T1["Member"]
+        T2["Subscriber"]
+        T3["Employer Group"]
+        T4["Benefit Plan"]
+        T5["Enrollment"]
+        T6["Transaction / Reject"]
+
+        PG --- T1
+        PG --- T2
+        PG --- T3
+        PG --- T4
+        PG --- T5
+        PG --- T6
+    end
+
+
+    %% ============================================================
+    %% ANALYTICS
+    %% ============================================================
+
+    subgraph ANALYTICS["ANALYTICAL PLATFORM"]
+        direction TB
+
+        SQL["Databricks SQL"]
+
+        DIM["DIM_*"]
+        FACT["FACT_ENROLLMENT"]
+
+        SQL --> DIM
+        SQL --> FACT
+    end
+
+
+    %% ============================================================
+    %% CONSUMPTION
+    %% ============================================================
+
+    subgraph CONSUMPTION["CONSUMPTION"]
+        direction TB
+
+        BI["BI / Dashboards"]
+        GENIE["Natural Language Analytics<br/>AI / Genie"]
+    end
+
+
+    %% ============================================================
+    %% PRIMARY DATA FLOW
+    %% ============================================================
+
+    EDI --> S3
+
+    S3 --> D1
+
+    D1 --> P
+
+    P --> D2
+
+    D2 --> D3
+    D2 --> D4
+
+    D3 --> PG
+
+    D4 --> B
+
+    G --> SQL
+
+    SQL --> BI
+    SQL --> GENIE
+
+
+    %% ============================================================
+    %% RECONCILIATION
+    %% ============================================================
+
+    PG -.-> D5
+    G -.-> D5
+
+    D5 -.-> AF
+
+
+    %% ============================================================
+    %% STYLING
+    %% ============================================================
+
+    classDef source fill:#F8FAFC,stroke:#475569,color:#0F172A,stroke-width:1.5px;
+
+    classDef storage fill:#FFF7ED,stroke:#C2410C,color:#7C2D12,stroke-width:1.5px;
+
+    classDef orchestration fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:1.5px;
+
+    classDef compute fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:2px;
+
+    classDef bronze fill:#FFF7ED,stroke:#C2410C,color:#7C2D12,stroke-width:1.5px;
+
+    classDef silver fill:#F8FAFC,stroke:#64748B,color:#334155,stroke-width:1.5px;
+
+    classDef gold fill:#F0FDFA,stroke:#0F766E,color:#134E4A,stroke-width:2px;
+
+    classDef database fill:#EFF6FF,stroke:#2563EB,color:#1E3A8A,stroke-width:2px;
+
+    classDef analytics fill:#F0FDFA,stroke:#0F766E,color:#134E4A,stroke-width:1.5px;
+
+    classDef consumption fill:#F5F3FF,stroke:#7C3AED,color:#4C1D95,stroke-width:1.5px;
+
+
+    class EDI source;
+
+    class S3 storage;
+
+    class AF,D1,D2,D3,D4,D5 orchestration;
+
+    class P compute;
+
+    class B bronze;
+
+    class SV silver;
+
+    class G gold;
+
+    class PG,T1,T2,T3,T4,T5,T6 database;
+
+    class SQL,DIM,FACT analytics;
+
+    class BI,GENIE consumption;
+
+
+    style SOURCE fill:#FFFFFF,stroke:#94A3B8,stroke-width:1.5px
+
+    style STORAGE fill:#FFFFFF,stroke:#C2410C,stroke-width:1.5px
+
+    style ORCH fill:#FFFFFF,stroke:#2563EB,stroke-width:2px
+
+    style DBX fill:#FFFFFF,stroke:#7C3AED,stroke-width:2px
+
+    style OLTP fill:#FFFFFF,stroke:#2563EB,stroke-width:2px
+
+    style ANALYTICS fill:#FFFFFF,stroke:#0F766E,stroke-width:2px
+
+    style CONSUMPTION fill:#FFFFFF,stroke:#7C3AED,stroke-width:1.5px
