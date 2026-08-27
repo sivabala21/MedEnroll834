@@ -1,0 +1,326 @@
+Project MED834ENRL_OLTP {
+  database_type: "PostgreSQL"
+
+  Note: '''
+  MED834ENRL — OLTP Operational Data Model
+
+  Purpose:
+  Operational system of record for Medicare 834 enrollment processing.
+
+  Design:
+  - Normalized relational model
+  - Transactional workloads
+  - Referential integrity
+  - Current operational enrollment state
+  - Transaction and rejection tracking
+  '''
+}
+
+
+// ============================================================
+// TABLE GROUPS
+// ============================================================
+
+TableGroup "CORE - MASTER DATA" [color: #2563EB] {
+  CORE_GRGR_GROUP
+  CORE_PLPL_PLAN
+  CORE_MESB_SUBSCRIBER
+  CORE_MEME_MEMBER
+  CORE_SBAD_ADDRESS
+}
+
+TableGroup "CORE - ENROLLMENT" [color: #2563EB] {
+  CORE_MEEN_ENROLLMENT
+}
+
+TableGroup "ENRL - TRANSACTION CONTROL" [color: #D97706] {
+  ENRL_EDXN_TRANSACTION
+  ENRL_RJRW_REJECT
+}
+
+
+// ============================================================
+// EMPLOYER GROUP
+// ============================================================
+
+Table CORE_GRGR_GROUP [headercolor: #2563EB] {
+  GRGR_ID       bigint       [pk, increment, not null]
+  GRGR_NUM       varchar(20)  [not null, unique]
+  ST_CD         char(2)      [not null]
+  EFF_DT        date         [not null]
+  TERM_DT       date
+  CRTD_TS       timestamptz  [not null]
+  UPDT_TS       timestamptz  [not null]
+
+  Note: '''
+  Employer Group
+
+  Organization/group sponsoring healthcare coverage.
+  '''
+  
+  indexes {
+    GRGR_NUM [unique]
+    ST_CD
+  }
+}
+
+
+// ============================================================
+// BENEFIT PLAN
+// ============================================================
+
+Table CORE_PLPL_PLAN [headercolor: #2563EB] {
+  PLPL_ID       bigint       [pk, increment, not null]
+  PLPL_CD        varchar(20)  [not null, unique]
+  PLPL_NM        varchar(200) [not null]
+  LOB_CD        varchar(30)  [not null]
+  EFF_DT        date         [not null]
+  TERM_DT       date
+  CRTD_TS       timestamptz  [not null]
+  UPDT_TS       timestamptz  [not null]
+
+  Note: '''
+  Benefit Plan
+
+  Defines the healthcare benefit/coverage plan.
+  '''
+
+  indexes {
+    PLPL_CD [unique]
+    LOB_CD
+    EFF_DT
+  }
+}
+
+
+// ============================================================
+// SUBSCRIBER
+// ============================================================
+
+Table CORE_MESB_SUBSCRIBER [headercolor: #2563EB] {
+  MESB_ID       bigint       [pk, increment, not null]
+  SBSB_NUM      varchar(30)  [not null, unique]
+  GRGR_ID       bigint       [not null]
+  FST_NM        varchar(100) [not null]
+  LST_NM        varchar(100) [not null]
+  DOB           date         [not null]
+  GNDR_CD       char(1)
+  CRTD_TS       timestamptz  [not null]
+  UPDT_TS       timestamptz  [not null]
+
+  Note: '''
+  Subscriber
+
+  Primary enrollee/policyholder associated with an employer group.
+  '''
+
+  indexes {
+    SBSB_NUM [unique]
+    GRGR_ID
+    LST_NM
+  }
+}
+
+
+// ============================================================
+// MEMBER
+// ============================================================
+
+Table CORE_MEME_MEMBER [headercolor: #2563EB] {
+  MEME_ID       bigint       [pk, increment, not null]
+  MESB_ID       bigint       [not null]
+  RLTN_CD       varchar(2)   [not null]
+  FST_NM        varchar(100) [not null]
+  LST_NM        varchar(100) [not null]
+  DOB           date         [not null]
+  GNDR_CD       char(1)
+  IS_ACT      Boolean  [not null]
+  CRTD_TS       timestamptz  [not null]
+  UPDT_TS       timestamptz  [not null]
+
+  Note: '''
+  Member
+
+  Covered individual.
+  May represent subscriber or dependent.
+  '''
+
+  indexes {
+    MESB_ID
+    IS_ACT
+    LST_NM
+  }
+}
+
+
+// ============================================================
+// ADDRESS
+// ============================================================
+
+Table CORE_SBAD_ADDRESS [headercolor: #2563EB] {
+  SBAD_ID       bigint       [pk, increment, not null]
+  MEME_ID       bigint       [not null]
+  ADR_TYP       varchar(10)  [not null]
+  ADR_LN1       varchar(150) [not null]
+  ADR_LN2       varchar(150)
+  CITY_NM       varchar(100) [not null]
+  ST_CD         char(2)      [not null]
+  ZIP_CD        varchar(10)  [not null]
+  EFF_DT        date         [not null]
+  CRTD_TS       timestamptz  [not null]
+
+  Note: '''
+  Member address information.
+  '''
+
+  indexes {
+    MEME_ID
+    ST_CD
+    ZIP_CD
+  }
+}
+
+
+// ============================================================
+// ENROLLMENT
+// ============================================================
+
+Table CORE_MEEN_ENROLLMENT [headercolor: #2563EB] {
+  MEEN_ID       bigint       [pk, increment, not null]
+
+  MEME_ID       bigint       [not null]
+  PLPL_ID       bigint       [not null]
+  TXN_ID        bigint       [not null]
+
+  MAINT_TYP_CD  varchar(3)   [not null]
+  EFF_DT   date         [not null]
+  TERM_DT    date
+  ENRL_STAT     varchar(15)  [not null]
+
+  CRTD_TS       timestamptz  [not null]
+  UPDT_TS       timestamptz  [not null]
+
+  Note: '''
+  Enrollment
+
+  Represents a member's coverage relationship
+  with a benefit plan.
+  '''
+
+  indexes {
+    MEME_ID
+    PLPL_ID
+    TXN_ID
+    ENRL_STAT
+    EFF_DT
+
+    (MEME_ID, PLPL_ID)
+  }
+}
+
+
+// ============================================================
+// TRANSACTION CONTROL
+// ============================================================
+
+Table ENRL_EDXN_TRANSACTION [headercolor: #D97706] {
+  TXN_ID        bigint       [pk, increment, not null]
+
+  FILE_NM       varchar(255) [not null]
+
+  ISA_CTRL_NUM  varchar(20)  [not null]
+  GS_CTRL_NUM   varchar(20)  [not null]
+  ST_CTRL_NUM   varchar(20)  [not null]
+
+  SNDR_ID       varchar(20)  [not null]
+  RCVR_ID       varchar(20)  [not null]
+
+  RCVD_TS       timestamptz  [not null]
+
+  PROC_STAT     varchar(15)  [not null]
+  REC_CNT       int
+
+  Note: '''
+  834 Transaction Control
+
+  Stores inbound transaction envelope information,
+  processing status and source file metadata.
+  '''
+
+  indexes {
+    (ISA_CTRL_NUM, GS_CTRL_NUM, ST_CTRL_NUM) [unique]
+    FILE_NM
+    PROC_STAT
+    RCVD_TS
+  }
+}
+
+
+// ============================================================
+// REJECT
+// ============================================================
+
+Table ENRL_RJRW_REJECT [headercolor: #DC2626] {
+  RJRW_ID       bigint       [pk, increment, not null]
+
+  TXN_ID        bigint       [not null]
+
+  SRC_ROW       text         [not null]
+
+  RJCT_CD       varchar(20)  [not null]
+  RJCT_RSN      varchar(255) [not null]
+
+  RJCT_TS       timestamptz  [not null]
+
+  Note: '''
+  Rejected enrollment record.
+
+  Stores invalid records that fail
+  validation or business rules.
+  '''
+
+  indexes {
+    TXN_ID
+    RJCT_CD
+    RJCT_TS
+  }
+}
+
+
+// ============================================================
+// RELATIONSHIPS
+// ============================================================
+
+// Employer Group → Subscriber
+// 1 : N
+Ref: CORE_GRGR_GROUP.GRGR_ID < CORE_MESB_SUBSCRIBER.GRGR_ID
+
+
+// Subscriber → Member
+// 1 : N
+Ref: CORE_MESB_SUBSCRIBER.MESB_ID < CORE_MEME_MEMBER.MESB_ID
+
+
+// Member → Address
+// 1 : N
+Ref: CORE_MEME_MEMBER.MEME_ID < CORE_SBAD_ADDRESS.MEME_ID
+
+
+// Member → Enrollment
+// 1 : N
+Ref: CORE_MEME_MEMBER.MEME_ID < CORE_MEEN_ENROLLMENT.MEME_ID
+
+
+// Plan → Enrollment
+// 1 : N
+Ref: CORE_PLPL_PLAN.PLPL_ID < CORE_MEEN_ENROLLMENT.PLPL_ID
+
+
+// Transaction → Enrollment
+// 1 : N
+Ref: ENRL_EDXN_TRANSACTION.TXN_ID < CORE_MEEN_ENROLLMENT.TXN_ID
+
+
+// Transaction → Reject
+// 1 : N
+Ref: ENRL_EDXN_TRANSACTION.TXN_ID < ENRL_RJRW_REJECT.TXN_ID

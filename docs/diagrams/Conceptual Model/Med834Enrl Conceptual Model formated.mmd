@@ -1,0 +1,80 @@
+%%{
+  init: {
+    'theme': 'base',
+    'flowchart': {
+      'padding': 30,
+      'nodeSpacing': 50,
+      'rankSpacing': 60,
+      'subGraphTitleMargin': { 'top': 15, 'bottom': 15 }
+    }
+  }
+}%%
+flowchart LR
+
+    subgraph SOURCE["&nbsp;&nbsp;SOURCE DOMAIN&nbsp;&nbsp;"]
+        S["834 Enrollment<br/>Transaction"]
+    end
+
+    subgraph PROCESS["&nbsp;&nbsp;ENROLLMENT PROCESSING DOMAIN&nbsp;&nbsp;"]
+        P1["Transaction<br/>Ingestion"]
+        P2["Enrollment<br/>Normalization"]
+        P3["Validation &<br/>Data Quality"]
+        P4["Enrollment<br/>Business Rules"]
+
+        P1 --> P2 --> P3 --> P4
+    end
+
+    subgraph OPERATIONAL["&nbsp;&nbsp;OPERATIONAL DATA DOMAIN&nbsp;&nbsp;"]
+        O1["Employer Group"]
+        O2["Subscriber"]
+        O3["Member"]
+        O4["Benefit Plan"]
+        O5["Enrollment"]
+        O6["Address"]
+        O7["Transaction Control"]
+        O8["Rejected Record"]
+    end
+
+    subgraph ANALYTICAL["&nbsp;&nbsp;ANALYTICAL DATA DOMAIN&nbsp;&nbsp;"]
+        A1["Historical<br/>Enrollment"]
+        A2["Member<br/>Analytics"]
+        A3["Plan<br/>Analytics"]
+        A4["Group<br/>Analytics"]
+    end
+
+    subgraph CONSUMPTION["&nbsp;&nbsp;CONSUMPTION DOMAIN&nbsp;&nbsp;"]
+        C1["Operational<br/>Reporting"]
+        C2["Analytical<br/>Reporting"]
+        C3["Natural Language<br/>Analytics"]
+    end
+
+    S --> P1
+
+    P4 --> O1
+    P4 --> O2
+    P4 --> O3
+    P4 --> O4
+    P4 --> O5
+    P4 --> O6
+    P1 --> O7
+
+    P3 -. "Invalid" .-> O8
+
+    O1 --> A1
+    O2 --> A1
+    O3 --> A1
+    O4 --> A1
+    O5 --> A1
+
+    A1 --> A2
+    A1 --> A3
+    A1 --> A4
+
+    O5 --> C1
+    A2 --> C2
+    A3 --> C2
+    A4 --> C2
+
+    A2 --> C3
+    A3 --> C3
+    A4 --> C3

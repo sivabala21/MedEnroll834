@@ -1,0 +1,300 @@
+Project MED834ENRL_OLAP {
+  database_type: "PostgreSQL"
+
+  Note: '''
+  MED834ENRL — OLAP Gold Data Model
+
+  Purpose:
+  Analytical model for enrollment reporting,
+  historical analysis and natural-language analytics.
+
+  Design:
+  - Dimensional model
+  - Star schema
+  - SCD Type 2 dimensions
+  - Fact grain: one row per enrollment event
+  '''
+}
+
+
+// ============================================================
+// TABLE GROUPS
+// ============================================================
+
+TableGroup "GOLD - DIMENSIONS" [color: #0F766E] {
+  DIM_MEMBER
+  DIM_PLAN
+  DIM_GROUP
+  DIM_DATE
+  DIM_TRANSACTION_SOURCE
+}
+
+TableGroup "GOLD - FACTS" [color: #7C3AED] {
+  FACT_ENROLLMENT
+}
+
+
+// ============================================================
+// MEMBER DIMENSION
+// ============================================================
+
+Table DIM_MEMBER [headercolor: #0F766E] {
+  MEME_KEY       bigint       [pk, increment, not null]
+
+  MEME_ID       bigint       [not null]
+  MESB_ID       bigint       [not null]
+
+  FST_NM        varchar(100) [not null]
+  LST_NM        varchar(100) [not null]
+  DOB           date         [not null]
+  GNDR_CD       varchar(1)
+  RLTN_CD       varchar(2)
+
+  EFF_DT        date         [not null]
+  END_DT        date
+  CUR_FLG       boolean      [not null]
+
+  Note: '''
+  Member Dimension
+
+  SCD Type 2.
+
+  Maintains historical versions
+  of member attributes.
+  '''
+
+  indexes {
+    MEME_ID
+    MESB_ID
+    CUR_FLG
+    (MEME_ID, EFF_DT)
+  }
+}
+
+
+// ============================================================
+// PLAN DIMENSION
+// ============================================================
+
+Table DIM_PLAN [headercolor: #0F766E] {
+  PLPL_KEY       bigint       [pk, increment, not null]
+
+  PLPL_ID       bigint       [not null]
+
+  PLPL_CD        varchar(20)  [not null]
+  PLPL_NM        varchar(200) [not null]
+  LOB_CD        varchar(30)  [not null]
+
+  EFF_DT        date         [not null]
+  END_DT        date
+  CUR_FLG       boolean      [not null]
+
+  Note: '''
+  Benefit Plan Dimension
+
+  SCD Type 2.
+
+  Maintains historical versions
+  of plan attributes.
+  '''
+
+  indexes {
+    PLPL_ID
+    PLPL_CD
+    LOB_CD
+    CUR_FLG
+    (PLPL_ID, EFF_DT)
+  }
+}
+
+
+// ============================================================
+// GROUP DIMENSION
+// ============================================================
+
+Table DIM_GROUP [headercolor: #0F766E] {
+  GRGR_KEY       bigint       [pk, increment, not null]
+
+  GRGR_ID       bigint       [not null]
+
+  GRGR_NUM       varchar(20)  [not null]
+  GRGR_NM        varchar(200) [not null]
+  ST_CD         varchar(2)
+
+  EFF_DT        date         [not null]
+  END_DT        date
+  CUR_FLG       boolean      [not null]
+
+  Note: '''
+  Employer Group Dimension
+
+  SCD Type 2.
+
+  Maintains historical versions
+  of group attributes.
+  '''
+
+  indexes {
+    GRGR_ID
+    GRGR_NUM
+    ST_CD
+    CUR_FLG
+    (GRGR_ID, EFF_DT)
+  }
+}
+
+
+// ============================================================
+// DATE DIMENSION
+// ============================================================
+
+Table DIM_DATE [headercolor: #0F766E] {
+  DT_KEY        int          [pk, not null]
+
+  FULL_DT       date         [not null]
+
+  YR_NUM        int          [not null]
+  QTR_NUM       int          [not null]
+  MO_NUM        int          [not null]
+  DY_NUM        int          [not null]
+
+  DOW_NM        varchar(20)  [not null]
+
+  Note: '''
+  Calendar Dimension
+
+  DT_KEY uses YYYYMMDD format.
+  '''
+  
+  indexes {
+    FULL_DT [unique]
+    YR_NUM
+    MO_NUM
+  }
+}
+
+
+// ============================================================
+// TRANSACTION SOURCE DIMENSION
+// ============================================================
+
+Table DIM_TRANSACTION_SOURCE [headercolor: #0F766E] {
+  TXN_SRC_KEY   bigint       [pk, increment, not null]
+
+  TXN_ID        bigint       [not null]
+
+  FILE_NM       varchar(255) [not null]
+  SNDR_ID       varchar(20)  [not null]
+
+  RCVD_TS       timestamptz  [not null]
+
+  Note: '''
+  Transaction Source Dimension
+
+  Provides analytical lineage
+  back to the inbound 834 transaction.
+  '''
+
+  indexes {
+    TXN_ID
+    FILE_NM
+    RCVD_TS
+  }
+}
+
+
+// ============================================================
+// ENROLLMENT FACT
+// ============================================================
+
+Table FACT_ENROLLMENT [headercolor: #7C3AED] {
+  ENRL_FCT_ID      bigint       [pk, increment, not null]
+
+  // Dimension foreign keys
+  MEM_KEY          bigint       [not null]
+  PLPL_KEY          bigint       [not null]
+  GRGR_KEY          bigint       [not null]
+  TXN_SRC_KEY      bigint       [not null]
+
+  // Date foreign keys
+  COV_STRT_DT_KEY  int          [not null]
+  COV_END_DT_KEY   int
+
+  // Degenerate / descriptive attributes
+  MAINT_TYP_CD     varchar(3)   [not null]
+  ENRL_STAT        varchar(15)  [not null]
+
+  // Measure
+  ENRL_CNT         int          [not null, default: 1]
+
+  // Audit
+  LOAD_TS          timestamptz  [not null]
+
+  Note: '''
+  Enrollment Fact
+
+  Grain:
+  One row per enrollment event.
+
+  Measures:
+  ENRL_CNT
+
+  Dimensions:
+  Member
+  Plan
+  Group
+  Transaction Source
+  Coverage Start Date
+  Coverage End Date
+  '''
+
+  indexes {
+    MEM_KEY
+    PLPL_KEY
+    GRGR_KEY
+    TXN_SRC_KEY
+
+    COV_STRT_DT_KEY
+    COV_END_DT_KEY
+
+    (MEM_KEY, COV_STRT_DT_KEY)
+    (PLPL_KEY, COV_STRT_DT_KEY)
+    (GRGR_KEY, COV_STRT_DT_KEY)
+  }
+}
+
+
+// ============================================================
+// STAR SCHEMA RELATIONSHIPS
+// ============================================================
+
+// Member → Enrollment Fact
+// 1 : N
+Ref: DIM_MEMBER.MEME_KEY < FACT_ENROLLMENT.MEM_KEY
+
+
+// Plan → Enrollment Fact
+// 1 : N
+Ref: DIM_PLAN.PLPL_KEY < FACT_ENROLLMENT.PLPL_KEY
+
+
+// Group → Enrollment Fact
+// 1 : N
+Ref: DIM_GROUP.GRGR_KEY < FACT_ENROLLMENT.GRGR_KEY
+
+
+// Coverage Start Date → Enrollment Fact
+// 1 : N
+Ref: DIM_DATE.DT_KEY < FACT_ENROLLMENT.COV_STRT_DT_KEY
+
+
+// Coverage End Date → Enrollment Fact
+// 1 : N
+Ref: DIM_DATE.DT_KEY < FACT_ENROLLMENT.COV_END_DT_KEY
+
+
+// Transaction Source → Enrollment Fact
+// 1 : N
+Ref: DIM_TRANSACTION_SOURCE.TXN_SRC_KEY < FACT_ENROLLMENT.TXN_SRC_KEY
+
+Ref: "DIM_TRANSACTION_SOURCE"."TXN_SRC_KEY" <? "DIM_TRANSACTION_SOURCE"."FILE_NM"

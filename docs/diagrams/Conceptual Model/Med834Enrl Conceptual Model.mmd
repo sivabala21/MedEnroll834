@@ -1,0 +1,73 @@
+---
+config:
+  theme: base
+---
+flowchart LR
+
+    subgraph SOURCE["SOURCE DOMAIN"]
+        S["834 Enrollment Transaction"]
+    end
+
+    subgraph PROCESS["ENROLLMENT PROCESSING DOMAIN"]
+        P1["Transaction Ingestion"]
+        P2["Enrollment Normalization"]
+        P3["Validation & Data Quality"]
+        P4["Enrollment Business Rules"]
+
+        P1 --> P2 --> P3 --> P4
+    end
+
+    subgraph OPERATIONAL["OPERATIONAL DATA DOMAIN"]
+        O1["Employer Group"]
+        O2["Subscriber"]
+        O3["Member"]
+        O4["Benefit Plan"]
+        O5["Enrollment"]
+        O6["Address"]
+        O7["Transaction Control"]
+        O8["Rejected Record"]
+    end
+
+    subgraph ANALYTICAL["ANALYTICAL DATA DOMAIN"]
+        A1["Historical Enrollment"]
+        A2["Member Analytics"]
+        A3["Plan Analytics"]
+        A4["Group Analytics"]
+    end
+
+    subgraph CONSUMPTION["CONSUMPTION DOMAIN"]
+        C1["Operational Reporting"]
+        C2["Analytical Reporting"]
+        C3["Natural Language Analytics"]
+    end
+
+    S --> P1
+
+    P4 --> O1
+    P4 --> O2
+    P4 --> O3
+    P4 --> O4
+    P4 --> O5
+    P4 --> O6
+    P1 --> O7
+
+    P3 -. "Invalid" .-> O8
+
+    O1 --> A1
+    O2 --> A1
+    O3 --> A1
+    O4 --> A1
+    O5 --> A1
+
+    A1 --> A2
+    A1 --> A3
+    A1 --> A4
+
+    O5 --> C1
+    A2 --> C2
+    A3 --> C2
+    A4 --> C2
+
+    A2 --> C3
+    A3 --> C3
+    A4 --> C3
