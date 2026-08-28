@@ -1,0 +1,382 @@
+Project MED834ENRL_OLAP {
+  database_type: "PostgreSQL"
+
+  Note: '''
+  MED834ENRL — OLAP Gold Data Model
+
+  Purpose:
+  Analytical model for enrollment reporting,
+  historical analysis and natural-language analytics.
+
+  Design:
+  - Dimensional model
+  - Star schema
+  - SCD Type 2 dimensions
+  - Fact grain: one row per enrollment event
+  '''
+}
+
+
+// ============================================================
+// TABLE GROUPS
+// ============================================================
+
+TableGroup "GOLD - DIMENSIONS" [color: #0F766E] {
+  DIM_MEMBER
+  DIM_PLAN
+  DIM_GROUP
+  DIM_DATE
+  DIM_TRANSACTION_SOURCE
+}
+
+TableGroup "GOLD - FACTS" [color: #7C3AED] {
+  FACT_ENROLLMENT
+}
+
+
+// ============================================================
+// MEMBER DIMENSION
+// ============================================================
+
+Table DIM_MEMBER [headercolor: #0F766E] {
+
+  MEME_KEY          bigint       [pk, increment, not null]
+
+  MEME_ID           varchar(30)  [not null]
+  MESB_ID           varchar(30)  [not null]
+
+  FIRST_NAME        varchar(100) [not null]
+  LAST_NAME         varchar(100) [not null]
+
+  DATE_OF_BIRTH     date         [not null]
+
+  GENDER_CODE       varchar(1)
+  RELATIONSHIP_CODE varchar(2)
+
+  EFFECTIVE_DATE    date         [not null]
+  END_DATE          date
+  CURRENT_FLAG      boolean      [not null]
+
+  Note: '''
+  Member Dimension
+
+  SCD Type 2.
+
+  Maintains historical versions
+  of member attributes.
+
+  MEME_KEY:
+  Warehouse-generated surrogate key.
+
+  MEME_ID:
+  Source/business member identifier.
+  '''
+
+  indexes {
+    MEME_ID
+    MESB_ID
+    CURRENT_FLAG
+    (MEME_ID, EFFECTIVE_DATE)
+  }
+}
+
+
+// ============================================================
+// PLAN DIMENSION
+// ============================================================
+
+Table DIM_PLAN [headercolor: #0F766E] {
+
+  PLPL_KEY          bigint       [pk, increment, not null]
+
+  PLPL_ID           varchar(30)  [not null]
+
+  PLAN_CODE         varchar(20)  [not null]
+  PLAN_NAME         varchar(200) [not null]
+
+  LINE_OF_BUSINESS_CODE varchar(30) [not null]
+
+  EFFECTIVE_DATE    date         [not null]
+  END_DATE          date
+  CURRENT_FLAG      boolean      [not null]
+
+  Note: '''
+  Benefit Plan Dimension
+
+  SCD Type 2.
+
+  Maintains historical versions
+  of benefit plan attributes.
+
+  PLPL_KEY:
+  Warehouse-generated surrogate key.
+
+  PLPL_ID:
+  Source/business plan identifier.
+  '''
+
+  indexes {
+    PLPL_ID
+    PLAN_CODE
+    LINE_OF_BUSINESS_CODE
+    CURRENT_FLAG
+    (PLPL_ID, EFFECTIVE_DATE)
+  }
+}
+
+
+// ============================================================
+// GROUP DIMENSION
+// ============================================================
+
+Table DIM_GROUP [headercolor: #0F766E] {
+
+  GRGR_KEY          bigint       [pk, increment, not null]
+
+  GRGR_ID           varchar(30)  [not null]
+
+  GROUP_NUMBER      varchar(20)  [not null]
+  GROUP_NAME        varchar(200) [not null]
+
+  STATE_CODE        varchar(2)
+
+  EFFECTIVE_DATE    date         [not null]
+  END_DATE          date
+  CURRENT_FLAG      boolean      [not null]
+
+  Note: '''
+  Employer Group Dimension
+
+  Represents an organization or employer group
+  associated with healthcare enrollment.
+
+  SCD Type 2.
+
+  GRGR_KEY:
+  Warehouse-generated surrogate key.
+
+  GRGR_ID:
+  Source/business group identifier.
+  '''
+
+  indexes {
+    GRGR_ID
+    GROUP_NUMBER
+    STATE_CODE
+    CURRENT_FLAG
+    (GRGR_ID, EFFECTIVE_DATE)
+  }
+}
+
+
+// ============================================================
+// DATE DIMENSION
+// ============================================================
+
+Table DIM_DATE [headercolor: #0F766E] {
+
+  DATE_KEY          int          [pk, not null]
+
+  FULL_DATE         date         [not null]
+
+  YEAR_NUMBER       int          [not null]
+  QUARTER_NUMBER    int          [not null]
+  MONTH_NUMBER      int          [not null]
+  DAY_NUMBER        int          [not null]
+
+  DAY_OF_WEEK_NAME  varchar(20)  [not null]
+
+  Note: '''
+  Calendar Dimension
+
+  DATE_KEY uses YYYYMMDD format.
+
+  Example:
+  20260827 = 27-Aug-2026
+  '''
+
+  indexes {
+    FULL_DATE [unique]
+    YEAR_NUMBER
+    MONTH_NUMBER
+  }
+}
+
+
+// ============================================================
+// TRANSACTION SOURCE DIMENSION
+// ============================================================
+
+Table DIM_TRANSACTION_SOURCE [headercolor: #0F766E] {
+
+  TXN_SRC_KEY       bigint       [pk, increment, not null]
+
+  TXN_ID            bigint       [not null]
+
+  FILE_NAME         varchar(255) [not null]
+
+  SENDER_ID         varchar(20)  [not null]
+
+  RECEIVED_TIMESTAMP timestamptz  [not null]
+
+  Note: '''
+  Transaction Source Dimension
+
+  Provides analytical lineage back to the
+  inbound 834 transaction.
+
+  TXN_SRC_KEY:
+  Warehouse-generated surrogate key.
+
+  TXN_ID:
+  Internal operational transaction identifier.
+  '''
+
+  indexes {
+    TXN_ID
+    FILE_NAME
+    RECEIVED_TIMESTAMP
+  }
+}
+
+
+// ============================================================
+// ENROLLMENT FACT
+// ============================================================
+
+Table FACT_ENROLLMENT [headercolor: #7C3AED] {
+
+  ENROLLMENT_FACT_KEY bigint       [pk, increment, not null]
+
+
+  // ----------------------------------------------------------
+  // DIMENSION FOREIGN KEYS
+  // ----------------------------------------------------------
+
+  MEME_KEY             bigint       [not null]
+  PLPL_KEY             bigint       [not null]
+  GRGR_KEY             bigint       [not null]
+  TXN_SRC_KEY          bigint       [not null]
+
+
+  // ----------------------------------------------------------
+  // DATE FOREIGN KEYS
+  // ----------------------------------------------------------
+
+  COVERAGE_START_DATE_KEY int      [not null]
+  COVERAGE_END_DATE_KEY   int
+
+
+  // ----------------------------------------------------------
+  // DEGENERATE / DESCRIPTIVE ATTRIBUTES
+  // ----------------------------------------------------------
+
+  MAINTENANCE_TYPE_CODE varchar(3)  [not null]
+
+  ENROLLMENT_STATUS     varchar(15) [not null]
+
+
+  // ----------------------------------------------------------
+  // MEASURES
+  // ----------------------------------------------------------
+
+  ENROLLMENT_COUNT      int         [not null, default: 1]
+
+
+  // ----------------------------------------------------------
+  // AUDIT
+  // ----------------------------------------------------------
+
+  LOAD_TIMESTAMP        timestamptz [not null]
+
+
+  Note: '''
+  Enrollment Fact
+
+  Grain:
+  One row per enrollment event.
+
+  Measures:
+  - ENROLLMENT_COUNT
+
+  Dimensions:
+  - Member
+  - Plan
+  - Group
+  - Transaction Source
+  - Coverage Start Date
+  - Coverage End Date
+
+  The dimension foreign keys use surrogate keys
+  to preserve historical dimensional context.
+  '''
+
+
+  indexes {
+
+    MEME_KEY
+    PLPL_KEY
+    GRGR_KEY
+    TXN_SRC_KEY
+
+    COVERAGE_START_DATE_KEY
+    COVERAGE_END_DATE_KEY
+
+    (MEME_KEY, COVERAGE_START_DATE_KEY)
+    (PLPL_KEY, COVERAGE_START_DATE_KEY)
+    (GRGR_KEY, COVERAGE_START_DATE_KEY)
+  }
+}
+
+
+// ============================================================
+// STAR SCHEMA RELATIONSHIPS
+// ============================================================
+
+
+// ------------------------------------------------------------
+// MEMBER → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_MEMBER.MEME_KEY < FACT_ENROLLMENT.MEME_KEY
+
+
+// ------------------------------------------------------------
+// PLAN → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_PLAN.PLPL_KEY < FACT_ENROLLMENT.PLPL_KEY
+
+
+// ------------------------------------------------------------
+// GROUP → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_GROUP.GRGR_KEY < FACT_ENROLLMENT.GRGR_KEY
+
+
+// ------------------------------------------------------------
+// COVERAGE START DATE → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_DATE.DATE_KEY < FACT_ENROLLMENT.COVERAGE_START_DATE_KEY
+
+
+// ------------------------------------------------------------
+// COVERAGE END DATE → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_DATE.DATE_KEY < FACT_ENROLLMENT.COVERAGE_END_DATE_KEY
+
+
+// ------------------------------------------------------------
+// TRANSACTION SOURCE → ENROLLMENT FACT
+// 1 : N
+// ------------------------------------------------------------
+
+Ref: DIM_TRANSACTION_SOURCE.TXN_SRC_KEY < FACT_ENROLLMENT.TXN_SRC_KEY
