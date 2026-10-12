@@ -1,0 +1,115 @@
+---
+# MedEnroll834 - Airflow 3.x stack (CeleryExecutor) for the end-to-end pipeline.
+# Based on the official Airflow docker-compose, trimmed, with:
+#   * project bind-mounted at /opt/airflow/project (so src/ + generator/ import)
+#   * extra pip deps installed at startup (databricks-sdk, boto3, psycopg2-binary)
+#   * pipeline env vars (S3, OLTP database, Databricks) passed to scheduler/worker
+x-airflow-common: &airflow-common
+  image: apache/airflow:3.3.0
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-webserver:8080/execution/"
+    AIRFLOW__API_AUTH__JWT_SECRET: "med834-shared-jwt-secret-key-change-me"
+    AIRFLOW__CORE__FERNET_KEY: "FB0o_zt4e3Ziq3LdUUO7F2Z95cvFFx16hU8jTeR1ASM="
+    _PIP_ADDITIONAL_REQUIREMENTS: "databricks-sdk>=0.20.0 boto3>=1.34.0 psycopg2-binary>=2.9.9"
+    # Pipeline configuration (also settable as Airflow Variables)
+    BLOB_STORAGE_TOKEN: ${BLOB_STORAGE_TOKEN}
+    S3_BUCKET: ${S3_BUCKET}
+    AWS_REGION: ${AWS_REGION}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    OLTP_DATABASE_URL: ${OLTP_DATABASE_URL}
+    DATABRICKS_HOST: ${DATABRICKS_HOST}
+    DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
+    DATABRICKS_JOB_ID: ${DATABRICKS_JOB_ID}
+    DATABRICKS_WAREHOUSE_ID: ${DATABRICKS_WAREHOUSE_ID}
+    GENIE_SPACE_ID: ${GENIE_SPACE_ID}
+    PYTHONPATH: /opt/airflow/project
+  volumes:
+    - ./05_orchestration/airflow/01_dags:/opt/airflow/dags
+    - airflow-logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - .:/opt/airflow/project
+  user: "50000:0"
+  depends_on: &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      retries: 5
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create --username admin --password admin \
+          --firstname admin --lastname admin --role Admin --email admin@example.com || true
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: "true"
+
+volumes:
+  postgres-db-volume:
+  airflow-logs:
