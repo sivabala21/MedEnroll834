@@ -1,0 +1,20 @@
+{
+  "job_id": 950623271437212,
+  "new_settings": {
+    "name": "med834enrl-medallion-pipeline",
+    "tasks": [
+      {
+        "task_key": "medallion",
+        "notebook_task": {
+          "notebook_path": "/Shared/med834enrl/med834_medallion_job",
+          "base_parameters": {
+            "landing_path": "/Volumes/med834enrl/edi/landing/834/",
+            "catalog": "med834enrl"
+          }
+        }
+      }
+    ],
+    "queue": { "enabled": true },
+    "max_concurrent_runs": 1
+  }
+}
