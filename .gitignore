@@ -273,3 +273,16 @@ grafana/data/
 
 # Docker
 docker-compose.override.yml
+
+# Scratch logs and placeholder artifacts (not part of codebase)
+/compose_up.txt
+/compose_up_err.txt
+/cu.txt
+/cue.txt
+/ds.txt
+/dse.txt
+/dsil.txt
+/dsile.txt
+/e2e.txt
+11_build/
+12_tools/
