@@ -1,45 +1,46 @@
 ﻿# MedEnroll834 - Modern HIPAA X12 834 Healthcare Enrollment Data Platform
 
-This project implements a modern distributed data platform for HIPAA X12 834 healthcare enrollment processing using a medallion architecture (Bronze/Silver/Gold) with Apache Spark, Delta Lake, PostgreSQL, and Apache Airflow.
+MedEnroll834 demonstrates modernizing legacy HIPAA X12 834 healthcare enrollment processing into a distributed, cloud-ready data platform. It uses a **Medallion Architecture** (Bronze → Silver → Gold) powered by Apache Spark, Delta Lake, PostgreSQL, and Apache Airflow to deliver scalable ingestion, validation, transformation, and analytics.
 
-## Key Documentation
+## What It Does
 
-- [Project Overview](docs-site/docs/01-project-overview.md)
-- [Business Problem](docs-site/docs/02-business-problem.md)
-- [Architecture Overview](docs-site/docs/04-modern-architecture.md)
-- [Technology Decisions](docs-site/docs/05-technology-decisions.md)
-- [Repository Structure](docs-site/docs/06-repository-structure.md)
-- [AWS S3 Setup](docs-site/docs/07-aws-s3-setup.md)
-- [PostgreSQL Setup](docs-site/docs/08-postgresql-setup.md)
-- [Database Schema](docs-site/docs/09-database-schema.md)
-- [Synthetic Data Generation](docs-site/docs/10-synthetic-data-generation.md)
-- [PySpark Development Environment](docs-site/docs/11-pyspark-dev-environment.md)
-- [834 Parser](docs-site/docs/12-834-parser.md)
-- [Bronze Layer](docs-site/docs/13-bronze-layer.md)
-- [Silver Layer](docs-site/docs/14-silver-layer.md)
-- [Business Rules - Plan Assignment](docs-site/docs/15-business-rules-plan-assignment.md)
-- [Data Quality & Reject Handling](docs-site/docs/16-data-quality-reject-handling.md)
-- [PostgreSQL Bulk Load Upsert](docs-site/docs/17-postgresql-bulk-load-upsert.md)
-- [Gold Layer](docs-site/docs/18-gold-layer.md)
-- [OLAP Star Schema](docs-site/docs/19-olap-star-schema.md)
-- [Airflow Architecture](docs-site/docs/20-airflow-architecture.md)
-- [Airflow DAG Implementation](docs-site/docs/21-airflow-dag-implementation.md)
-- [Idempotency & Incremental Processing](docs-site/docs/22-idempotency-incremental-processing.md)
-- [Error Handling & Retry](docs-site/docs/23-error-handling-retry.md)
-- [Observability](docs-site/docs/24-observability.md)
-- [Spark Performance Optimization](docs-site/docs/25-spark-performance-optimization.md)
-- [Benchmark Framework](docs-site/docs/26-benchmark-framework.md)
-- [Databricks SQL Dashboard](docs-site/docs/27-databricks-sql-dashboard.md)
-- [Genie GenAI](docs-site/docs/28-genie-genai.md)
-- [Security](docs-site/docs/29-security.md)
-- [Testing](docs-site/docs/30-testing.md)
-- [CI/CD](docs-site/docs/31-ci-cd.md)
-- [Docker Local Development](docs-site/docs/32-docker-local-development.md)
-- [End-to-End Execution](docs-site/docs/33-end-to-end-execution.md)
-- [Legacy vs Modern Benchmark](docs-site/docs/34-legacy-vs-modern-benchmark.md)
-- [Business Impact](docs-site/docs/35-business-impact.md)
-- [Interview Explanation](docs-site/docs/36-interview-explanation.md)
-- [Portfolio README](docs-site/docs/37-portfolio-readme.md)
-- [Future Improvements](docs-site/docs/38-future-improvements.md)
+- **Ingests** X12 834 enrollment files and lands them in a structured, traceable format
+- **Validates & standardizes** enrollment data with business rules and data quality checks
+- **Transforms** raw segments into clean, conformed member/enrollment records
+- **Persists** to OLTP and OLAP models for operational and analytical workloads
+- **Orchestrates** the end-to-end pipeline with Apache Airflow for reliability and idempotency
+- **Enables** BI and AI consumption via curated Gold layer models
 
-For comprehensive documentation, see the [full gitbook documentation site](docs-site/docs/index.md).
+## Key Technologies
+
+- **Processing:** Apache Spark, PySpark, Delta Lake
+- **Storage:** AWS S3, Local filesystem
+- **Databases:** PostgreSQL (OLTP), Delta/Parquet (OLAP)
+- **Orchestration:** Apache Airflow, Docker
+- **Data Quality:** Pydantic/validation rules, quarantine handling
+- **Testing:** PyTest with PySpark fixtures
+
+## Quick Start
+
+```bash
+# Clone and set up
+git clone https://github.com/sivabala21/MedEnroll834.git
+cd MedEnroll834
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest -v
+
+# Start local stack (Docker)
+docker-compose up -d
+```
+
+## Architecture Snapshot
+
+The platform follows a medallion pattern: raw 834 EDI files are ingested to Bronze (Delta), cleansed and enriched in Silver, and modeled into a star schema in Gold for analytics. The pipeline includes parser logic, plan assignment rules, reject/quarantine handling, bulk upserts to PostgreSQL, and Airflow DAGs for orchestration.
+
+## Documentation
+
+For the complete, in-depth documentation covering architecture, setup, implementation details, testing, deployment, and runbooks, see the [**Full Documentation Site**](docs-site/docs/index.md).
