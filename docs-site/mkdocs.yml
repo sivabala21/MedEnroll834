@@ -1,11 +1,11 @@
-site_name: MedEnroll834 — Engineering Handbook
+﻿site_name: MedEnroll834 â€” Engineering Handbook
 site_description: >-
-  Modern Distributed Data Platform for Growing Data — a healthcare X12 834
+  Modern Distributed Data Platform for Growing Data â€” a healthcare X12 834
   enrollment modernization built on PySpark, Delta Lake, Databricks, Airflow,
   and PostgreSQL.
 site_author: MedEnroll834 Project
-repo_name: medenroll834
-repo_url: https://github.com/yourusername/medenroll834
+repo_name: MedEnroll834
+repo_url: https://github.com/sivabala21/MedEnroll834
 edit_uri: edit/main/docs-site/docs/
 
 theme:
@@ -72,7 +72,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yourusername/medenroll834
+      link: https://github.com/sivabala21/MedEnroll834
 
 nav:
   - Home: index.md
