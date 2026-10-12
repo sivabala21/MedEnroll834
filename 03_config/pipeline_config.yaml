@@ -1,0 +1,57 @@
+catalog: med834enrl
+schema: edi
+volume: landing
+
+layers:
+  bronze:
+    path: 10_data/bronze/edi834_segments
+    table: bronze_edi_segments
+    format: delta
+    options:
+      mergeSchema: "true"
+      delta.autoOptimize.optimizeWrite: "true"
+  silver:
+    path: 10_data/silver/members
+    table: silver_members
+    format: delta
+    options:
+      mergeSchema: "true"
+      delta.deletedFileRetentionDuration: "interval 7 days"
+  gold:
+    path: 10_data/gold/enrollments
+    table: gold_enrollments
+    format: delta
+    options:
+      mergeSchema: "true"
+      delta.enableChangeDataFeed: "true"
+
+quarantine:
+  path: 10_data/quarantine/invalid_members
+  table: quarantine_invalid_members
+  format: delta
+
+unity_catalog:
+  enabled: true
+  catalog_name: med834enrl
+  schema_name: edi
+
+paths:
+  landing_raw: /Volumes/med834enrl/edi/landing/834
+  checkpoint: /Volumes/med834enrl/edi/checkpoints/834_pipeline
+
+pipeline:
+  batch_size: 1000
+  max_files_per_run: 100
+  trigger_interval: "0 0 2 * * ?"
+
+validation:
+  require_plan_code: true
+  valid_plan_codes:
+    - GOLD
+    - SILVER
+    - BRONZE
+    - PLATINUM
+    - HDHP
+    - EPO
+    - PPO
+    - HMO
