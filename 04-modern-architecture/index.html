@@ -1,0 +1,1402 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="Modern Distributed Data Platform for Growing Data â€” a healthcare X12 834 enrollment modernization built on PySpark, Delta Lake, Databricks, Airflow, and PostgreSQL." name="description"/>
+<meta content="MedEnroll834 Project" name="author"/>
+<link href="../03-legacy-architecture/" rel="prev"/>
+<link href="../05-technology-decisions/" rel="next"/>
+<link href="../assets/images/favicon.png" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.7" name="generator"/>
+<title>04. Modern Architecture - MedEnroll834 â€” Engineering Handbook</title>
+<link href="../assets/stylesheets/main.ec1eaa64.min.css" rel="stylesheet"/>
+<link href="../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+</head>
+<body data-md-color-accent="deep-orange" data-md-color-primary="teal" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#04-modern-architecture">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="MedEnroll834 â€” Engineering Handbook" class="md-header__button md-logo" data-md-component="logo" href=".." title="MedEnroll834 â€” Engineering Handbook">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            MedEnroll834 â€” Engineering Handbook
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              04. Modern Architecture
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="deep-orange" data-md-color-media="(prefers-color-scheme: light)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"></path></svg>
+</label>
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="deep-orange" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-primary="teal" data-md-color-scheme="slate" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+<div class="md-search__suggest" data-md-component="search-suggest"></div>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/sivabala21/MedEnroll834" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+</div>
+<div class="md-source__repository">
+    MedEnroll834
+  </div>
+</a>
+</div>
+</nav>
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="..">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+</li>
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href="../01-project-overview/">
+          
+  
+  
+    
+  
+  Overview &amp; Business Context
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../07-aws-s3-setup/">
+          
+  
+  
+    
+  
+  Foundations &amp; Setup
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../12-834-parser/">
+          
+  
+  
+    
+  
+  Pipeline Engineering
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../20-airflow-architecture/">
+          
+  
+  
+    
+  
+  Orchestration &amp; Reliability
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../25-spark-performance-optimization/">
+          
+  
+  
+    
+  
+  Performance &amp; Analytics
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../29-security/">
+          
+  
+  
+    
+  
+  Quality, Security &amp; Delivery
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../34-legacy-vs-modern-benchmark/">
+          
+  
+  
+    
+  
+  Impact &amp; Portfolio
+
+        </a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="MedEnroll834 â€” Engineering Handbook" class="md-nav__button md-logo" data-md-component="logo" href=".." title="MedEnroll834 â€” Engineering Handbook">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+    MedEnroll834 â€” Engineering Handbook
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/sivabala21/MedEnroll834" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+</div>
+<div class="md-source__repository">
+    MedEnroll834
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="..">
+<span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+<span class="md-ellipsis">
+    
+  
+    Overview &amp; Business Context
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Overview &amp; Business Context
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01-project-overview/">
+<span class="md-ellipsis">
+    
+  
+    01. Project Overview
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02-business-problem/">
+<span class="md-ellipsis">
+    
+  
+    02. Business Problem
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03-legacy-architecture/">
+<span class="md-ellipsis">
+    
+  
+    03. Legacy Architecture
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    
+  
+    04. Modern Architecture
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./">
+<span class="md-ellipsis">
+    
+  
+    04. Modern Architecture
+  
+
+    
+  </span>
+</a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#idea-modern-distributed-data-platform-for-growing-data">
+<span class="md-ellipsis">
+      
+        Idea: Modern Distributed Data Platform for Growing Data
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#two-capabilities">
+<span class="md-ellipsis">
+      
+        Two capabilities
+      
+    </span>
+</a>
+<nav aria-label="Two capabilities" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#capability-1-distributed-processing">
+<span class="md-ellipsis">
+      
+        Capability 1 — Distributed Processing
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#capability-2-analytical-platform">
+<span class="md-ellipsis">
+      
+        Capability 2 — Analytical Platform
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#full-architecture-diagram">
+<span class="md-ellipsis">
+      
+        Full architecture diagram
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#architecture-layers">
+<span class="md-ellipsis">
+      
+        Architecture layers
+      
+    </span>
+</a>
+<nav aria-label="Architecture layers" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-analytical-consumption-two-modes">
+<span class="md-ellipsis">
+      
+        4. Analytical consumption — two modes
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#5-orchestration-airflow">
+<span class="md-ellipsis">
+      
+        5. Orchestration — Airflow
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#6-poc-vs-enterprise-storage">
+<span class="md-ellipsis">
+      
+        6. POC vs. enterprise storage
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#alignment-summary">
+<span class="md-ellipsis">
+      
+        Alignment summary
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05-technology-decisions/">
+<span class="md-ellipsis">
+    
+  
+    05. Technology Decisions
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../06-repository-structure/">
+<span class="md-ellipsis">
+    
+  
+    06. Project Repository Structure
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Foundations &amp; Setup
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Foundations &amp; Setup
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../07-aws-s3-setup/">
+<span class="md-ellipsis">
+    
+  
+    07. AWS / S3 Setup
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../08-postgresql-setup/">
+<span class="md-ellipsis">
+    
+  
+    08. PostgreSQL Setup
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../09-database-schema/">
+<span class="md-ellipsis">
+    
+  
+    09. Database Schema
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../10-synthetic-data-generation/">
+<span class="md-ellipsis">
+    
+  
+    10. Synthetic 834 Data Generation
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../11-pyspark-dev-environment/">
+<span class="md-ellipsis">
+    
+  
+    11. PySpark Development Environment
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Pipeline Engineering
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Pipeline Engineering
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../12-834-parser/">
+<span class="md-ellipsis">
+    
+  
+    12. 834 Parser
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../13-bronze-layer/">
+<span class="md-ellipsis">
+    
+  
+    13. Bronze Layer
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../14-silver-layer/">
+<span class="md-ellipsis">
+    
+  
+    14. Silver Layer
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../15-business-rules-plan-assignment/">
+<span class="md-ellipsis">
+    
+  
+    15. Business Rules / Plan Assignment
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../16-data-quality-reject-handling/">
+<span class="md-ellipsis">
+    
+  
+    16. Data Quality &amp; Reject Handling
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../17-postgresql-bulk-load-upsert/">
+<span class="md-ellipsis">
+    
+  
+    17. PostgreSQL Bulk Load / Upsert
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../18-gold-layer/">
+<span class="md-ellipsis">
+    
+  
+    18. Gold Layer
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../19-olap-star-schema/">
+<span class="md-ellipsis">
+    
+  
+    19. OLAP Star Schema
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Orchestration &amp; Reliability
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_5">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Orchestration &amp; Reliability
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../20-airflow-architecture/">
+<span class="md-ellipsis">
+    
+  
+    20. Airflow Architecture
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../21-airflow-dag-implementation/">
+<span class="md-ellipsis">
+    
+  
+    21. Airflow DAG Implementation
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../22-idempotency-incremental-processing/">
+<span class="md-ellipsis">
+    
+  
+    22. Idempotency &amp; Incremental Processing
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../23-error-handling-retry/">
+<span class="md-ellipsis">
+    
+  
+    23. Error Handling &amp; Retry
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../24-observability/">
+<span class="md-ellipsis">
+    
+  
+    24. Observability
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Performance &amp; Analytics
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_6_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_6">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Performance &amp; Analytics
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../25-spark-performance-optimization/">
+<span class="md-ellipsis">
+    
+  
+    25. Spark Performance Optimization
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../26-benchmark-framework/">
+<span class="md-ellipsis">
+    
+  
+    26. Benchmark Framework
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../27-databricks-sql-dashboard/">
+<span class="md-ellipsis">
+    
+  
+    27. Databricks SQL Dashboard
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../28-genie-genai/">
+<span class="md-ellipsis">
+    
+  
+    28. Genie / GenAI
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Quality, Security &amp; Delivery
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_7">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Quality, Security &amp; Delivery
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../29-security/">
+<span class="md-ellipsis">
+    
+  
+    29. Security
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../30-testing/">
+<span class="md-ellipsis">
+    
+  
+    30. Testing
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../31-ci-cd/">
+<span class="md-ellipsis">
+    
+  
+    31. CI/CD
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../32-docker-local-development/">
+<span class="md-ellipsis">
+    
+  
+    32. Docker / Local Development
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../33-end-to-end-execution/">
+<span class="md-ellipsis">
+    
+  
+    33. End-to-End Execution
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" id="__nav_8" type="checkbox"/>
+<label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Impact &amp; Portfolio
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_8_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_8">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Impact &amp; Portfolio
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../34-legacy-vs-modern-benchmark/">
+<span class="md-ellipsis">
+    
+  
+    34. Legacy vs Modern Benchmark
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../35-business-impact/">
+<span class="md-ellipsis">
+    
+  
+    35. Business Impact
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../36-interview-explanation/">
+<span class="md-ellipsis">
+    
+  
+    36. Interview Explanation
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../37-portfolio-readme/">
+<span class="md-ellipsis">
+    
+  
+    37. Portfolio README
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../38-future-improvements/">
+<span class="md-ellipsis">
+    
+  
+    38. Future Improvements
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#idea-modern-distributed-data-platform-for-growing-data">
+<span class="md-ellipsis">
+      
+        Idea: Modern Distributed Data Platform for Growing Data
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#two-capabilities">
+<span class="md-ellipsis">
+      
+        Two capabilities
+      
+    </span>
+</a>
+<nav aria-label="Two capabilities" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#capability-1-distributed-processing">
+<span class="md-ellipsis">
+      
+        Capability 1 — Distributed Processing
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#capability-2-analytical-platform">
+<span class="md-ellipsis">
+      
+        Capability 2 — Analytical Platform
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#full-architecture-diagram">
+<span class="md-ellipsis">
+      
+        Full architecture diagram
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#architecture-layers">
+<span class="md-ellipsis">
+      
+        Architecture layers
+      
+    </span>
+</a>
+<nav aria-label="Architecture layers" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-analytical-consumption-two-modes">
+<span class="md-ellipsis">
+      
+        4. Analytical consumption — two modes
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#5-orchestration-airflow">
+<span class="md-ellipsis">
+      
+        5. Orchestration — Airflow
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#6-poc-vs-enterprise-storage">
+<span class="md-ellipsis">
+      
+        6. POC vs. enterprise storage
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#alignment-summary">
+<span class="md-ellipsis">
+      
+        Alignment summary
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<a class="md-content__button md-icon" href="https://github.com/sivabala21/MedEnroll834/edit/main/docs-site/docs/04-modern-architecture.md" rel="edit" title="Edit this page">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
+</a>
+<h1 id="04-modern-architecture">04. Modern Architecture<a class="headerlink" href="#04-modern-architecture" title="Permanent link">¶</a></h1>
+<blockquote>
+<p>Source: <a href="https://github.com/yourusername/medenroll834/blob/main/08_docs/01_architecture_overview/ARCHITECTURE.md"><code>08_docs/01_architecture_overview/ARCHITECTURE.md</code></a> — the canonical architecture narrative for this repository.</p>
+</blockquote>
+<h2 id="idea-modern-distributed-data-platform-for-growing-data">Idea: Modern Distributed Data Platform for Growing Data<a class="headerlink" href="#idea-modern-distributed-data-platform-for-growing-data" title="Permanent link">¶</a></h2>
+<p>This proof of concept demonstrates how distributed processing can prepare a
+healthcare data platform for increasing data <strong>volume, velocity, and
+variety</strong>. X12 834 enrollment processing is the representative business
+module; the architecture is designed to be reusable across other business
+domains.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>"Enrollment" names the representative POC module, not the platform
+itself. The platform capability being demonstrated is distributed
+processing plus operational/analytical separation, applicable to any
+high-volume healthcare (or other) data domain.</p>
+</div>
+<h2 id="two-capabilities">Two capabilities<a class="headerlink" href="#two-capabilities" title="Permanent link">¶</a></h2>
+<p>The architecture delivers two distinct, composable capabilities. Keeping
+them conceptually separate is the core of the modernization story.</p>
+<h3 id="capability-1-distributed-processing">Capability 1 — Distributed Processing<a class="headerlink" href="#capability-1-distributed-processing" title="Permanent link">¶</a></h3>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>X12 834 → Landing (object storage) → Databricks / PySpark → Bronze → Silver → Gold
+</code></pre></div>
+<p><strong>Purpose:</strong> Handle increasing Volume, Velocity, and Variety by parsing and
+validating EDI data as a distributed, replayable medallion pipeline rather
+than a monolithic nightly batch job.</p>
+<h3 id="capability-2-analytical-platform">Capability 2 — Analytical Platform<a class="headerlink" href="#capability-2-analytical-platform" title="Permanent link">¶</a></h3>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>Gold → Star Schema (Delta Lake) → Databricks SQL → BI/HTML Reports + Genie AI
+</code></pre></div>
+<p><strong>Purpose:</strong> Separate analytical workloads from operational systems and
+provide governed data for BI and AI use cases, independent of the
+transactional (OLTP) store.</p>
+<p>And, feeding the <strong>operational</strong> side:</p>
+<div class="highlight"><pre><span></span><code><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>Gold → PostgreSQL OLTP database → Operational applications
+</code></pre></div>
+<p><strong>Purpose:</strong> Provide an operational relational store for application-facing
+reads/writes, decoupled from analytical query load.</p>
+<h2 id="full-architecture-diagram">Full architecture diagram<a class="headerlink" href="#full-architecture-diagram" title="Permanent link">¶</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    subgraph SOURCE["SOURCE SYSTEM"]
+        direction TB
+        EDI["834 EDI File"]
+    end
+
+    subgraph STORAGE["CLOUD STORAGE"]
+        direction TB
+        S3["Amazon S3<br/>Landing / Data Lake"]
+    end
+
+    subgraph ORCH["ORCHESTRATION"]
+        direction TB
+        AF["Apache Airflow"]
+        D1["Ingestion Job"]
+        D2["Validation Job"]
+        D3["OLTP Load Job"]
+        D4["Lakehouse Transform Job"]
+        D5["DQ / Reconciliation Job"]
+        AF --&gt; D1
+        AF --&gt; D2
+        AF --&gt; D3
+        AF --&gt; D4
+        AF --&gt; D5
+    end
+
+    subgraph DBX["DATABRICKS DATA PLATFORM"]
+        direction TB
+        P["PySpark<br/>Distributed Processing"]
+        B["BRONZE<br/>Raw Delta"]
+        SV["SILVER<br/>Validated &amp; Conformed Delta"]
+        G["GOLD<br/>Business-Ready Delta"]
+        P --&gt; B
+        B --&gt; SV
+        SV --&gt; G
+    end
+
+    subgraph OLTP["OPERATIONAL DATA STORE (OLTP)"]
+        direction TB
+        PG["PostgreSQL<br/>OLTP"]
+        T1["Member"]
+        T2["Subscriber"]
+        T3["Employer Group"]
+        T4["Benefit Plan"]
+        T5["Enrollment"]
+        T6["Transaction / Reject"]
+        PG --- T1
+        PG --- T2
+        PG --- T3
+        PG --- T4
+        PG --- T5
+        PG --- T6
+    end
+
+    subgraph ANALYTICS["ANALYTICAL PLATFORM (OLAP)"]
+        direction TB
+        SQL["Databricks SQL"]
+        DIM_M["DIM_MEMBER"]
+        DIM_PL["DIM_PLAN"]
+        DIM_GR["DIM_GROUP"]
+        DIM_DT["DIM_DATE"]
+        DIM_TX["DIM_TRANSACTION_SOURCE"]
+        FACT["FACT_ENROLLMENT"]
+        SQL --&gt; DIM_M
+        SQL --&gt; DIM_PL
+        SQL --&gt; DIM_GR
+        SQL --&gt; DIM_DT
+        SQL --&gt; DIM_TX
+        DIM_M --&gt; FACT
+        DIM_PL --&gt; FACT
+        DIM_GR --&gt; FACT
+        DIM_DT --&gt; FACT
+        DIM_TX --&gt; FACT
+    end
+
+    subgraph CONSUMPTION["CONSUMPTION"]
+        direction TB
+        BI["BI / Dashboards"]
+        GENIE["Natural Language Analytics<br/>AI / Genie"]
+    end
+
+    EDI --&gt; S3
+    S3 --&gt; D1
+    D1 --&gt; P
+    P --&gt; D2
+    D2 --&gt; D3
+    D2 --&gt; D4
+    D3 --&gt; PG
+    D4 --&gt; B
+    G --&gt; SQL
+    SQL --&gt; BI
+    SQL --&gt; GENIE
+    PG -.-&gt; D5
+    G -.-&gt; D5
+    D5 -.-&gt; AF
+</code></pre>
+<h2 id="architecture-layers">Architecture layers<a class="headerlink" href="#architecture-layers" title="Permanent link">¶</a></h2>
+<p><strong>1. Ingestion</strong> — Synthetic / real X12 834 files land in object storage,
+then get staged into a Databricks Unity Catalog Volume
+(<code>/Volumes/med834enrl/edi/landing/834</code>) so serverless Databricks compute can
+read them.</p>
+<p><strong>2. Distributed processing (Databricks / PySpark)</strong> — Bronze: raw X12
+segments, one row per segment, schema fixed but content untouched. Silver:
+validated, normalized member records with a <code>validation_errors</code> array and
+<code>is_valid</code> flag; invalid rows go to DQ / Quarantine. Gold: analytics-ready
+deduplicated enrollment records with derived fields (<code>full_name</code>,
+<code>age_years</code>).</p>
+<p><strong>3. Two downstream consumers of Gold</strong> — OLTP load: <code>load_gold_to_oltp()</code>
+upserts Gold rows into the PostgreSQL CORE/ENRL schemas for operational
+applications. OLAP star schema: the same Gold data is modeled into
+<code>DIM_MEMBER</code>, <code>DIM_PLAN</code>, <code>DIM_GROUP</code>, <code>DIM_DATE</code>,
+<code>DIM_TRANSACTION_SOURCE</code>, and <code>FACT_ENROLLMENT</code> for BI/dashboarding and
+AI/Genie natural-language analytics.</p>
+<h3 id="4-analytical-consumption-two-modes">4. Analytical consumption — two modes<a class="headerlink" href="#4-analytical-consumption-two-modes" title="Permanent link">¶</a></h3>
+<p>Both the HTML report and Genie
+are consumers of the governed analytical layer, not steps inside the
+pipeline's transformation logic.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Flow</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Traditional analytics</td>
+<td>Predefined SQL → HTML report</td>
+<td>Fixed KPIs, scheduled reporting</td>
+</tr>
+<tr>
+<td>AI analytics</td>
+<td>Natural language → SQL → result</td>
+<td>Ad hoc exploration via Genie</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-orchestration-airflow">5. Orchestration — Airflow<a class="headerlink" href="#5-orchestration-airflow" title="Permanent link">¶</a></h3>
+<p>Airflow orchestrates the end-to-end
+workflow, including ingestion, Databricks processing, OLTP loading,
+reporting, and archival, with task dependencies, retries, and failure
+handling. Airflow sits <strong>above</strong> the pipeline as orchestration — it is not a
+data layer itself. The archive step runs with <code>trigger_rule="all_done"</code>, so
+processed files are moved to the archive location regardless of whether
+downstream analytical steps (report, Genie) succeeded. See
+<a href="../20-airflow-architecture/">Chapter 20</a>.</p>
+<h3 id="6-poc-vs-enterprise-storage">6. POC vs. enterprise storage<a class="headerlink" href="#6-poc-vs-enterprise-storage" title="Permanent link">¶</a></h3>
+<p>For the proof of concept, S3-compatible
+blob storage and Databricks Unity Catalog Volumes provide the development
+storage path. In the target enterprise architecture, the
+landing/object-storage layer can be implemented using AWS S3 while
+retaining the same downstream Bronze-Silver-Gold, OLTP, OLAP, BI, and AI
+architecture — the interface is already implemented in
+<code>src/medenroll834/s3/s3_utils.py</code>
+alongside the POC's
+<code>src/medenroll834/storage/blob_storage.py</code>.</p>
+<h2 id="alignment-summary">Alignment summary<a class="headerlink" href="#alignment-summary" title="Permanent link">¶</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Design decision</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Named "Modern Distributed Data Platform for Growing Data"</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Separate OLTP (PostgreSQL) and OLAP (Delta/Star Schema) explicitly</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>FACT_ENROLLMENT</code> explicit at the center of the star schema</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Genie positioned as an analytical consumer, not a pipeline step</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>5</td>
+<td>HTML/BI and Genie positioned as two consumption paths</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>6</td>
+<td>POC storage (blob storage) distinguished from enterprise storage (S3)</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Airflow kept as orchestration, not a data layer</td>
+<td>Done</td>
+</tr>
+</tbody>
+</table>
+<p>See also: <a href="../33-end-to-end-execution/">End-to-End Execution</a> and
+<a href="../32-docker-local-development/">Docker / Local Development</a> (includes
+the backout/rollback procedures).</p>
+</article>
+</div>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+<div class="md-social">
+<a class="md-social__link" href="https://github.com/sivabala21/MedEnroll834" rel="noopener" target="_blank" title="github.com">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+</a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+<script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.4.0/dist/mermaid.esm.min.mjs";
+window.mermaidConfig = {default: {
+    startOnLoad: false
+}};</script></body>
+</html>
