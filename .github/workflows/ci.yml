@@ -20,11 +20,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Ruff
-        run: ruff check src/ tests/
+        run: ruff check src/ 02_tests/
       - name: Run MyPy
         run: mypy src/
       - name: Check formatting
-        run: black --check src/ tests/
+        run: black --check src/ 02_tests/
+
 
   test:
     runs-on: ubuntu-latest
@@ -43,7 +44,8 @@ jobs:
           pip install -r requirements.txt
       - name: Run tests
         run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+          pytest 02_tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:

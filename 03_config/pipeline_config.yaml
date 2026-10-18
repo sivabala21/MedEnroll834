@@ -47,11 +47,11 @@ pipeline:
 validation:
   require_plan_code: true
   valid_plan_codes:
-    - GOLD
-    - SILVER
-    - BRONZE
-    - PLATINUM
-    - HDHP
-    - EPO
-    - PPO
-    - HMO
+    - "100"
+    - "101"
+    - "102"
+    - "103"
+    - "104"
+    - "105"
+    - "106"
+    - "107"
