@@ -2,8 +2,9 @@
 """
 Backout (rollback) the MedEnroll834 blob storage content.
 
-Removes all objects under landing/834/, archive/834/, and audit/reports/ -
-the prefixes written by upload_to_blob / archive_blob / generate_report in
+Removes all objects under landing/834/, archive/834/, failed/834/, and
+audit/reports/ - the prefixes written by upload_to_blob / archive_blob /
+quarantine_failed_files / generate_report in
 05_orchestration/airflow/01_dags/med834_e2e_pipeline.py.
 
 The bucket itself is managed by the blob storage provider (not created/
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.medenroll834.storage import blob_storage
 
-PREFIXES = ["landing/834/", "archive/834/", "audit/reports/"]
+PREFIXES = ["landing/834/", "archive/834/", "failed/834/", "audit/reports/"]
 
 
 def main() -> int:
