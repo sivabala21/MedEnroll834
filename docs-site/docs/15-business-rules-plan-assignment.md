@@ -25,7 +25,7 @@ The complete set of accepted plan products is defined once and shared
 between the generator, the validator, and `pipeline_config.yaml`:
 
 ```python
-VALID_PLANS = {"GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"}
+VALID_PLANS = {"100", "101", "102", "103", "104", "105", "106", "107"}
 ```
 
 ```yaml
@@ -33,14 +33,14 @@ VALID_PLANS = {"GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HM
 validation:
   require_plan_code: true
   valid_plan_codes:
-    - GOLD
-    - SILVER
-    - BRONZE
-    - PLATINUM
-    - HDHP
-    - EPO
-    - PPO
-    - HMO
+    - "100"
+    - "101"
+    - "102"
+    - "103"
+    - "104"
+    - "105"
+    - "106"
+    - "107"
 ```
 
 Any `plan_id` outside this set produces a validation error
@@ -114,9 +114,15 @@ cur.execute(
     "INSERT INTO core.core_meen_enrollment (meme_id, plpl_id, txn_id, maint_typ_cd, "
     "eff_dt, term_dt, enrl_stat, crtd_ts, updt_ts) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
     (meme_id, plpl_id, txn_id, "021", _as_date(r.get("coverage_start_date")) or now.date(),
-     _as_date(r.get("coverage_end_date")), "ACTIVE", now, now),
+     _as_date_open_ended(r.get("coverage_end_date")),
+     "ACTIVE" if _as_date(r.get("coverage_end_date")) is None else "TERMED", now, now),
 )
 ```
+
+`_as_date_open_ended()` replaces a missing/`NULL` coverage end date with the
+fixed `9999-12-31` sentinel (`OPEN_ENDED_DATE`) instead of `NULL`, so
+`term_dt`/`END_DATE` is always a real, queryable date across both OLTP and
+OLAP (see [Chapter 19](19-olap-star-schema.md)).
 
 The OLAP `FACT_ENROLLMENT` builder in the Databricks notebook derives
 `ENROLLMENT_STATUS` dynamically instead, based on whether a coverage end

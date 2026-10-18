@@ -12,7 +12,7 @@ dropping or silently failing them.
 
 ```python
 class DataFrameValidator:
-    VALID_PLANS = {"GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"}
+    VALID_PLANS = {"100", "101", "102", "103", "104", "105", "106", "107"}
 
     def validate(self, df: DataFrame) -> DataFrame:
         errors = F.filter(

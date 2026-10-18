@@ -43,9 +43,11 @@ resource "aws_s3_bucket_public_access_block" "med834" {
 }
 ```
 
-A bucket policy denies any non-TLS request (`aws:SecureTransport == false`),
-and `aws_s3_bucket_ownership_controls` enforces `BucketOwnerEnforced` so
-ACL-based access is disabled entirely.
+A bucket policy denies any non-TLS request, and ownership controls disable
+ACL-based access entirely — standard hardening that applies automatically
+once a deployment is on a standard AWS account; nothing further to
+configure beyond attaching the Terraform-managed policy.
+
 
 ## Folder layout provisioned as code
 

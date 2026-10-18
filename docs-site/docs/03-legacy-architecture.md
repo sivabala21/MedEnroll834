@@ -48,9 +48,10 @@ flowchart LR
 - **Database contention.** Single-machine, serial processing against a
   shared database can create lock-related delays or failures under load.
 - **Limited parallelism.** All transformation work happens on one machine,
-  so the ~300K record / ~1 hour constraint (see
+  so the observed ~1 hour processing-time constraint (see
   [Chapter 2](02-business-problem.md)) cannot be improved without adding
   distributed compute.
+
 - **Proprietary intermediate format.** The EDI→proprietary conversion
   complicates reuse: the data cannot easily be queried, re-processed, or fed
   into an analytics stack without a custom reader.
@@ -61,8 +62,9 @@ flowchart LR
 ## Modernization boundary
 
 **FACETS remains the downstream system of record** in this prototype's
-conceptual framing. The modernization effort documented in this handbook
-focuses on **ingestion, transformation, validation, and data delivery** —
+conceptual framing. The modernization effort documented in this
+documentation focuses on **ingestion, transformation, validation, and data
+delivery** —
 replacing the EDI → ECA → .NET → TTK → Bash → W2K chain with a distributed
 PySpark/Delta/Airflow pipeline (see [Chapter 4](04-modern-architecture.md))
 while keeping the downstream operational contract (an enrollment record

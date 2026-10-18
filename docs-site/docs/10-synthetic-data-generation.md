@@ -17,12 +17,16 @@ LAST_NAMES  = ["SMITH", "JOHNSON", "WILLIAMS", ...]          # 38 names
 STREET_NAMES = ["MAIN ST", "OAK AVE", "PINE RD", ...]
 CITIES = ["NEW YORK", "LOS ANGELES", "CHICAGO", ...]         # 20 cities
 STATES = ["AL", "AK", "AZ", ..., "WY"]                       # all 50
-PLAN_CODES = ["GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"]
+PLAN_CODES = ["100", "101", "102", "103", "104", "105", "106", "107"]  # plain numeric plan codes
 RELATIONSHIP = ["18", "01", "03", "19"]  # self, spouse, child, domestic_partner
 ADR_TYP = ["HOME", "MAILING", "BILLING", "WORK"]
+GROUP_NUMBERS = [str(3300 + i) for i in range(50)]  # pure-numeric employer group pool
 ```
 
-`PLAN_CODES` here is the exact list `DataFrameValidator.VALID_PLANS`
+`PLAN_TIER_NAME` maps each numeric `PLAN_CODE` to a display tier
+(`"100" -> "GOLD"`, `"101" -> "SILVER"`, ...) for `PLAN_NAME` synthesis in
+Silver/Gold/OLAP, since the plan code itself is now opaque. `PLAN_CODES`
+is the exact set `DataFrameValidator.VALID_PLANS`
 validates against in Silver — generated files are guaranteed valid by
 construction unless `--messy` is passed (see below).
 
@@ -53,6 +57,34 @@ Bronze parser's `split_segments()` normalizes both, see
 
 ```python
 return "\n".join(s + "~" for s in [isa, gs] + segments + [se, ge, iea]) + "\n"
+```
+
+## Member, subscriber, and group identifiers
+
+All business identifiers are now plain-digit numeric strings instead of
+prefixed codes (e.g. `"2043434"` for a member, `"3341"` for an employer
+group), matching the `dbdiagram` physical models under
+`docs-site/docs/assets/architecture/physical-oltp` and `physical-olap`:
+
+```python
+def _numeric_id(used: set, low: int = 1000000, high: int = 9999999) -> str:
+    """Unique 7-digit member/subscriber identifier, e.g. "2043434"."""
+    while True:
+        candidate = random.randint(low, high)
+        if candidate not in used:
+            used.add(candidate)
+            return str(candidate)
+```
+
+Each subscriber is assigned a `GRGR_NUM` drawn from the fixed `GROUP_NUMBERS`
+pool (`"3300"`–`"3349"`) and carried through the file via the X12-standard
+`REF*1L*<group number>` (Group or Policy Number) segment — the same segment
+Silver's `_extract_ref_group_data()` reads back out, so `group_id` is
+populated from real file content end-to-end instead of a hardcoded default:
+
+```python
+def build_ref_group(grgr_num: str) -> str:
+    return f"REF*1L*{grgr_num}"
 ```
 
 ## Generating a batch

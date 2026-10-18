@@ -14,26 +14,34 @@ plain Parquet. The medallion layers
 (`src/medenroll834/ingestion/{bronze,silver,gold}.py`) write exclusively in
 Delta format.
 
-**Local dev friction solved:** `src/medenroll834/common/spark_session.py`
-(`get_local_spark()`) exists specifically because local Windows PySpark has
-three real gotchas, each addressed directly:
-
-- Delta needs `spark.sql.extensions` / `spark.sql.catalog.spark_catalog`
-  set *before* the session is created (static configs).
-- `PYSPARK_PYTHON` defaults to the literal string `python3`, which doesn't
-  exist on Windows — pinned to `sys.executable`.
-- Delta shells out to Hadoop's `winutils.exe` on Windows — vendored under
-  `12_tools/hadoop/bin` so a clean checkout doesn't need a separate Hadoop
-  install.
+**Why Delta over plain Parquet:** Parquet alone is already a columnar,
+compressed format — splitting data into column chunks means a query that
+only needs a few fields (e.g. `plan_id`, `coverage_start_date`) reads far
+less from disk than a row-oriented format would, and per-column min/max
+statistics let Spark skip whole files that can't match a filter. Delta
+Lake keeps that storage format but adds a transaction log on top of it:
+concurrent/retried writes (an Airflow retry re-running Bronze) can't
+corrupt or partially overwrite a table, `mergeSchema` lets a layer tolerate
+an added column without a manual migration, and `delta.enableChangeDataFeed`
+lets a future consumer read only the rows that changed since a given
+version instead of re-scanning the whole table (see
+[Chapter 37](37-future-improvements.md) for where this is headed next).
 
 ## Orchestration: Apache Airflow 3.x (TaskFlow API, CeleryExecutor)
 
-**Why:** Mature retry/backoff semantics, a task-dependency graph that
-mirrors the pipeline's real shape, Variable-based config override, and a
-UI for operational visibility — none of which the legacy Tidal/SSIS stack
-exposed in one place. The `@dag`/`@task` TaskFlow decorators
+**Why:** The core requirement here is production-grade orchestration — a
+task-dependency graph, automatic retries with backoff, and visibility into
+every run — delivered by a widely-adopted, actively maintained open-source
+project with a large operator/provider ecosystem (official Databricks and
+AWS provider packages, in this case) rather than a proprietary scheduler.
+The `@dag`/`@task` TaskFlow decorators
 (`05_orchestration/airflow/01_dags/med834_e2e_pipeline.py`) keep each stage
-as a typed Python function rather than an opaque operator config.
+as a typed Python function with explicit inputs/outputs, and the same DAG
+definition runs identically in this project's own Docker Compose stack or
+in a managed service (MWAA, Cloud Composer, Astronomer) with no code
+change — a proprietary enterprise scheduler would require a dedicated
+license and operator training, while Airflow's skill set and DAG code are
+directly portable.
 
 ## Compute platform: Databricks (Free/Serverless tier compatible)
 
@@ -54,14 +62,17 @@ upsert SQL explicit and auditable.
 
 ## Object storage: S3-compatible blob storage (POC) / AWS S3 (enterprise target)
 
-**Why:** The POC uses a token-based, short-lived-credential blob store
-(`src/medenroll834/storage/blob_storage.py`) so there is no long-lived
-secret to leak — credentials are minted fresh (~10 min TTL) on every call.
-The enterprise target substitutes AWS S3 at the exact same interface
-(`src/medenroll834/s3/s3_utils.py` already implements the equivalent
-`upload_834` / `list_landing_files` / `archive_834` functions), so swapping
-storage providers requires no change to Bronze/Silver/Gold, OLTP, OLAP, BI,
-or AI code.
+**Why:** Databricks' free/serverless tier does not support a live
+connection to an external AWS S3 bucket, so AWS S3 was not a feasible
+landing layer for this proof of concept. A third-party S3-compatible blob
+provider was used instead for the POC's landing/archive/report storage
+(`src/medenroll834/storage/blob_storage.py`). For an enterprise deployment
+with a paid Databricks tier, AWS S3 is the recommended target — the
+interface is already implemented at
+`src/medenroll834/s3/s3_utils.py` with the equivalent `upload_834` /
+`list_landing_files` / `archive_834` functions, so swapping storage
+providers requires no change to Bronze/Silver/Gold, OLTP, OLAP, BI, or AI
+code.
 
 ## Containerization: Docker / Docker Compose
 
@@ -73,22 +84,27 @@ tasks without a separate package build step.
 
 ## CI/CD: GitHub Actions
 
-**Why:** Free for public repos, native GitHub Pages deploy target (used by
-this very documentation site — see [Chapter 31](31-ci-cd.md)), and the
-existing `.github/workflows/ci.yml` / `cd.yml` already cover lint, test,
-security scan, build, and Docker image publish.
+**Why:** Free for public repos, with first-class native GitHub integration
+(no separate CI account/billing to provision) and a large marketplace of
+pre-built actions for exactly the steps this project needs (Python setup,
+Docker buildx/push, Codecov upload). The existing
+`.github/workflows/ci.yml` / `cd.yml` cover lint, test, security scan,
+build, and Docker image publish — see [Chapter 31](31-ci-cd.md) for the
+full pipeline and a known path-configuration bug that currently needs
+fixing in `ci.yml`.
 
 ## Summary table
 
 | Concern | Technology | Why (grounded in this repo) |
 |---|---|---|
 | Distributed processing | PySpark 4.0+, Delta Lake 4.0+ | Scales with volume; ACID + schema evolution on Bronze/Silver/Gold |
-| Orchestration | Apache Airflow 3.x (TaskFlow, Celery) | Retries, task graph, Variable overrides, UI |
+| Orchestration | Apache Airflow 3.x (TaskFlow, Celery) | Retries, task graph, Variable overrides, UI, portable open-source skill set |
 | Compute platform | Databricks (Serverless-compatible) | Managed Spark + Unity Catalog + SQL warehouses + `databricks-sdk` |
 | Operational store | PostgreSQL | FK-enforced OLTP schema, kept apart from OLAP |
 | OLTP driver | `psycopg2` (raw SQL) | Explicit, auditable upsert statements |
-| Object storage (POC) | S3-compatible blob storage | Short-lived, minted credentials (~10 min TTL) |
-| Object storage (enterprise) | AWS S3 | Same interface (`s3_utils.py`), swap-in only |
+| Object storage (POC) | S3-compatible blob storage | Works on Databricks' free tier, where native AWS S3 access isn't available |
+| Object storage (enterprise) | AWS S3 | Same interface (`s3_utils.py`), swap-in only, once on a paid Databricks tier |
 | Containerization | Docker / Docker Compose | One-command reproducible Airflow stack |
-| CI/CD | GitHub Actions | Free, native GitHub Pages deploy |
+| CI/CD | GitHub Actions | Free, native GitHub integration, large action marketplace |
 | IaC | Terraform | S3 bucket + policy as code (`04_infrastructure/01_terraform`) |
+

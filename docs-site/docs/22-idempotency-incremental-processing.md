@@ -59,7 +59,7 @@ Re-running `load_gold_to_oltp()` against the same Gold data therefore does
 `updt_ts` advances. (Member and enrollment rows are plain inserts in this
 simplified demo schema, not idempotent upserts — see
 [Chapter 17](17-postgresql-bulk-load-upsert.md) and
-[Chapter 38](38-future-improvements.md) for the natural extension.)
+[Chapter 37](37-future-improvements.md) for the natural extension.)
 
 ## OLAP idempotency: deterministic hashed keys
 
@@ -102,16 +102,20 @@ given Delta table version (`spark.read.format("delta").option("readChangeData", 
 instead of re-scanning the whole table — the current OLTP loader and
 report generator both still do a full `SELECT *` against Gold, so CDF is
 provisioned but not yet exploited; see
-[Chapter 38](38-future-improvements.md) for making the OLTP load
+[Chapter 37](37-future-improvements.md) for making the OLTP load
 CDF-incremental.
 
 ## File-level idempotency boundary
 
-The Airflow DAG's `archive_blob` step moves processed files out of
-`landing/834/` into `archive/834/` after a run completes
-(`trigger_rule="all_done"`). This means a given 834 file is only ever
-re-processed if it is manually moved back into `landing/` — the pipeline
-itself does not re-ingest archived files on a subsequent scheduled run,
-which is what keeps daily runs idempotent at the file level even though
-Bronze/Silver/Gold are always full `overwrite`s of "whatever is currently
-in landing."
+The Airflow DAG's `archive_blob` task moves this run's exact processed
+files out of `landing/834/` into `archive/834/` only after the core
+processing chain (push -> Databricks -> OLTP) succeeds (default
+`all_success` trigger rule, wired directly to that chain's XCom outputs —
+see [Chapter 23](23-error-handling-retry.md)). This means a given 834 file
+is only ever re-processed if it is manually moved back into `landing/` —
+the pipeline itself does not re-ingest archived files on a subsequent
+scheduled run, which is what keeps daily runs idempotent at the file level
+even though Bronze/Silver/Gold are always full `overwrite`s of "whatever is
+currently in landing." If the core chain fails instead, `quarantine_failed_files`
+moves the same files to `failed/834/` rather than archiving or re-listing
+`landing/834/` from scratch.

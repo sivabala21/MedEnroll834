@@ -1,10 +1,8 @@
 # 06. Project Repository Structure
 
-> Source: [`PROJECT_STRUCTURE.md`](https://github.com/yourusername/medenroll834/blob/main/PROJECT_STRUCTURE.md) and
-> [`REORGANIZATION_SUMMARY.md`](https://github.com/yourusername/medenroll834/blob/main/REORGANIZATION_SUMMARY.md).
-
 The repository follows a numbered, enterprise-style top-level layout so
 directory order communicates pipeline/delivery order at a glance.
+
 
 ```text
 MedEnroll834/
@@ -14,11 +12,11 @@ MedEnroll834/
 ├── 05_orchestration/          # Airflow DAGs + Databricks notebook/job
 ├── 06_deploy/                 # Deployment configs
 ├── 07_scripts/                # Deployment, backout, and utility scripts
-├── 08_docs/                   # Architecture docs, diagrams, runbooks (and this handbook's source)
-├── 09_monitoring/             # Observability placeholders
+├── 08_docs/                   # Architecture docs, diagrams, runbooks (and this documentation's source)
 ├── 10_data/                   # Local Delta table storage (bronze/silver/gold/quarantine)
 ├── 11_build/                  # Build artifacts
-├── 12_tools/                  # Vendored dev tools (bundled winutils.exe for local Delta on Windows)
+├── 12_tools/                  # Vendored dev tools (local Delta dependencies)
+
 ├── docs-site/                 # This GitBook-style documentation site (MkDocs)
 ├── generator/                 # synthetic_834_generator.py
 ├── src/
@@ -43,7 +41,7 @@ src/medenroll834/
 ├── common/
 │   ├── config.py          # load_config(), resolve_delta_path(), get_landing_path()
 │   ├── logging.py         # setup_logging(), log_pipeline_start/end()
-│   └── spark_session.py   # get_local_spark() — Delta + Windows bootstrap
+│   └── spark_session.py   # get_local_spark() — Delta session bootstrap
 ├── parsers/
 │   └── edi834_parser.py   # EDI834Parser — X12 834 → Bronze DataFrame
 ├── ingestion/
@@ -59,9 +57,9 @@ src/medenroll834/
 ├── reporting/
 │   └── report_generator.py # generate_report(), ask_genie()
 ├── storage/
-│   └── blob_storage.py    # POC S3-compatible blob storage client
+│   └── blob_storage.py    # S3-compatible blob storage client (current landing layer)
 └── s3/
-    └── s3_utils.py         # Enterprise-target AWS S3 client (same interface)
+    └── s3_utils.py         # AWS S3 client, same interface as blob_storage.py
 ```
 
 ## Key configuration files
@@ -74,10 +72,3 @@ src/medenroll834/
 | [`.env.example`](https://github.com/yourusername/medenroll834/blob/main/.env.example) | Template for all pipeline secrets (copy to `.env`, git-ignored) |
 | [`Makefile`](https://github.com/yourusername/medenroll834/blob/main/Makefile) | `install`, `test`, `lint`, `format`, `docker-up/down`, `setup-db`, `setup-databricks` |
 
-## Numbered directory rationale
-
-1. **Clarity** — numbers indicate order and priority.
-2. **Sorting** — logical directory ordering in any file browser or `ls`.
-3. **Standards** — mirrors enterprise delivery-pipeline conventions.
-4. **Professional presentation** — reads as industry-standard organization
-   to a reviewer or interviewer skimming the repo.

@@ -20,26 +20,8 @@ would create excessive task overhead. `shuffle.partitions=8` is tuned down
 from Spark's default of 200, appropriate for local/`local[*]` execution
 rather than a large cluster.
 
-## Driver memory: fixing a real OOM
-
-```python
-# Default JVM heap (1g) is not enough for the window functions in the
-# Silver address/hierarchy steps on a multi-core local box: 16 slots
-# each sort a partition of the shuffle and the driver OOMs. Raise the
-# ceiling and give the driver a real off-heap/spill budget.
-.config("spark.driver.memory", os.environ.get("SPARK_DRIVER_MEMORY", "4g"))
-.config("spark.driver.maxResultSize", "1g")
-.config("spark.sql.windowExec.buffer.spill.threshold", "4096")
-```
-
-This was a reproduced OOM, not a precaution: the Silver layer's HL
-hierarchy resolution uses multiple `Window` operations (see
-[Chapter 14](14-silver-layer.md)), and the default 1 GB driver heap could
-not hold the window buffers on a multi-core local machine. Raising
-`spark.driver.memory` to 4 GB and the window exec spill threshold to 4096
-rows fixed it.
-
 ## Broadcast map instead of a self-join (biggest algorithmic win)
+
 
 The single largest performance/correctness fix in the codebase: resolving
 each dependent's subscriber via `hl_parent_id`/`hl_id` was originally a
@@ -121,7 +103,7 @@ Enabled proactively so a future consumer can read only changed rows since
 a given version instead of a full re-scan — see
 [Chapter 22](22-idempotency-incremental-processing.md) for the current
 state (not yet exploited by the OLTP loader) and
-[Chapter 38](38-future-improvements.md) for the roadmap.
+[Chapter 37](37-future-improvements.md) for the roadmap.
 
 ## Databricks-side: `read_files()` + `explode()` over a Python loop
 

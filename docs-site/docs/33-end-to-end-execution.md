@@ -108,7 +108,7 @@ python 07_scripts/03_utils/run_e2e_smoke.py
 ```
 
 This exercises `DeltaMedallionPipeline` directly against local Delta
-tables — the same validated baseline referenced throughout this handbook:
+tables — the same validated baseline referenced throughout this documentation:
 
 ```text
 BRONZE     : segments_loaded = 83

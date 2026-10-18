@@ -1,7 +1,5 @@
 # 04. Modern Architecture
 
-> Source: [`08_docs/01_architecture_overview/ARCHITECTURE.md`](https://github.com/yourusername/medenroll834/blob/main/08_docs/01_architecture_overview/ARCHITECTURE.md) — the canonical architecture narrative for this repository.
-
 ## Idea: Modern Distributed Data Platform for Growing Data
 
 This proof of concept demonstrates how distributed processing can prepare a
@@ -16,10 +14,11 @@ domains.
     processing plus operational/analytical separation, applicable to any
     high-volume healthcare (or other) data domain.
 
-## Two capabilities
+## Three capabilities
 
-The architecture delivers two distinct, composable capabilities. Keeping
-them conceptually separate is the core of the modernization story.
+The architecture delivers three distinct, composable capabilities, in the
+order data actually flows through them. Keeping them conceptually separate
+is the core of the modernization story.
 
 ### Capability 1 — Distributed Processing
 
@@ -31,7 +30,16 @@ X12 834 → Landing (object storage) → Databricks / PySpark → Bronze → Sil
 validating EDI data as a distributed, replayable medallion pipeline rather
 than a monolithic nightly batch job.
 
-### Capability 2 — Analytical Platform
+### Capability 2 — Transactional Platform
+
+```
+Gold → PostgreSQL OLTP database → Operational applications
+```
+
+**Purpose:** Provide an operational relational store for application-facing
+reads/writes, decoupled from analytical query load.
+
+### Capability 3 — Analytical Platform
 
 ```
 Gold → Star Schema (Delta Lake) → Databricks SQL → BI/HTML Reports + Genie AI
@@ -41,116 +49,12 @@ Gold → Star Schema (Delta Lake) → Databricks SQL → BI/HTML Reports + Genie
 provide governed data for BI and AI use cases, independent of the
 transactional (OLTP) store.
 
-And, feeding the **operational** side:
-
-```
-Gold → PostgreSQL OLTP database → Operational applications
-```
-
-**Purpose:** Provide an operational relational store for application-facing
-reads/writes, decoupled from analytical query load.
-
 ## Full architecture diagram
 
-```mermaid
-flowchart LR
-    subgraph SOURCE["SOURCE SYSTEM"]
-        direction TB
-        EDI["834 EDI File"]
-    end
-
-    subgraph STORAGE["CLOUD STORAGE"]
-        direction TB
-        S3["Amazon S3<br/>Landing / Data Lake"]
-    end
-
-    subgraph ORCH["ORCHESTRATION"]
-        direction TB
-        AF["Apache Airflow"]
-        D1["Ingestion Job"]
-        D2["Validation Job"]
-        D3["OLTP Load Job"]
-        D4["Lakehouse Transform Job"]
-        D5["DQ / Reconciliation Job"]
-        AF --> D1
-        AF --> D2
-        AF --> D3
-        AF --> D4
-        AF --> D5
-    end
-
-    subgraph DBX["DATABRICKS DATA PLATFORM"]
-        direction TB
-        P["PySpark<br/>Distributed Processing"]
-        B["BRONZE<br/>Raw Delta"]
-        SV["SILVER<br/>Validated & Conformed Delta"]
-        G["GOLD<br/>Business-Ready Delta"]
-        P --> B
-        B --> SV
-        SV --> G
-    end
-
-    subgraph OLTP["OPERATIONAL DATA STORE (OLTP)"]
-        direction TB
-        PG["PostgreSQL<br/>OLTP"]
-        T1["Member"]
-        T2["Subscriber"]
-        T3["Employer Group"]
-        T4["Benefit Plan"]
-        T5["Enrollment"]
-        T6["Transaction / Reject"]
-        PG --- T1
-        PG --- T2
-        PG --- T3
-        PG --- T4
-        PG --- T5
-        PG --- T6
-    end
-
-    subgraph ANALYTICS["ANALYTICAL PLATFORM (OLAP)"]
-        direction TB
-        SQL["Databricks SQL"]
-        DIM_M["DIM_MEMBER"]
-        DIM_PL["DIM_PLAN"]
-        DIM_GR["DIM_GROUP"]
-        DIM_DT["DIM_DATE"]
-        DIM_TX["DIM_TRANSACTION_SOURCE"]
-        FACT["FACT_ENROLLMENT"]
-        SQL --> DIM_M
-        SQL --> DIM_PL
-        SQL --> DIM_GR
-        SQL --> DIM_DT
-        SQL --> DIM_TX
-        DIM_M --> FACT
-        DIM_PL --> FACT
-        DIM_GR --> FACT
-        DIM_DT --> FACT
-        DIM_TX --> FACT
-    end
-
-    subgraph CONSUMPTION["CONSUMPTION"]
-        direction TB
-        BI["BI / Dashboards"]
-        GENIE["Natural Language Analytics<br/>AI / Genie"]
-    end
-
-    EDI --> S3
-    S3 --> D1
-    D1 --> P
-    P --> D2
-    D2 --> D3
-    D2 --> D4
-    D3 --> PG
-    D4 --> B
-    G --> SQL
-    SQL --> BI
-    SQL --> GENIE
-    PG -.-> D5
-    G -.-> D5
-    D5 -.-> AF
-```
+![Modern Architecture](assets/img/Mordern Architecture.png)
 
 ## Architecture layers
+
 
 **1. Ingestion** — Synthetic / real X12 834 files land in object storage,
 then get staged into a Databricks Unity Catalog Volume
@@ -188,10 +92,12 @@ Airflow orchestrates the end-to-end
 workflow, including ingestion, Databricks processing, OLTP loading,
 reporting, and archival, with task dependencies, retries, and failure
 handling. Airflow sits **above** the pipeline as orchestration — it is not a
-data layer itself. The archive step runs with `trigger_rule="all_done"`, so
-processed files are moved to the archive location regardless of whether
-downstream analytical steps (report, Genie) succeeded. See
-[Chapter 20](20-airflow-architecture.md).
+data layer itself. The archive step runs with the default `all_success`
+trigger rule, wired directly to the core processing chain's own outputs, so
+files are only archived once Databricks and the OLTP load have actually
+succeeded; a separate `quarantine_failed_files` task
+(`trigger_rule="one_failed"`) moves this run's files to a `failed/` prefix
+instead if that chain fails. See [Chapter 20](20-airflow-architecture.md).
 
 ### 6. POC vs. enterprise storage
 
@@ -205,19 +111,8 @@ architecture — the interface is already implemented in
 alongside the POC's
 `src/medenroll834/storage/blob_storage.py`.
 
-## Alignment summary
-
-| # | Design decision | Status |
-|---|------------------|--------|
-| 1 | Named "Modern Distributed Data Platform for Growing Data" | Done |
-| 2 | Separate OLTP (PostgreSQL) and OLAP (Delta/Star Schema) explicitly | Done |
-| 3 | `FACT_ENROLLMENT` explicit at the center of the star schema | Done |
-| 4 | Genie positioned as an analytical consumer, not a pipeline step | Done |
-| 5 | HTML/BI and Genie positioned as two consumption paths | Done |
-| 6 | POC storage (blob storage) distinguished from enterprise storage (S3) | Done |
-| 7 | Airflow kept as orchestration, not a data layer | Done |
-
 See also: [End-to-End Execution](33-end-to-end-execution.md) and
 [Docker / Local Development](32-docker-local-development.md) (includes
 the backout/rollback procedures).
+
 

@@ -12,11 +12,11 @@
 
 > Source: [Chapter 2](02-business-problem.md), business-problem framing.
 
-An observed legacy workload of approximately **300,000 records takes
-nearly one hour** end to end, across the full EDI → ECA → .NET → TTK →
-Bash → W2K chain. This number describes the *existing production
-workflow's* behavior as reported by the business, not a benchmark run
-against this repository's code.
+Enrollment processing jobs in the legacy system are observed to take
+approximately **one hour** end to end for a full daily batch file, across
+the full EDI → ECA → .NET → TTK → Bash → W2K chain. This number describes
+the *existing production workflow's* behavior as reported by the business,
+not a benchmark run against this repository's code.
 
 ## Modern pipeline (measured, smoke-test scale)
 
@@ -36,7 +36,8 @@ QUARANTINE : records = 0
 All four Delta tables were written with a valid `_delta_log`. This
 confirms **functional correctness** end to end (parsing, HL resolution,
 validation, dedup, Delta writes) — it is not yet a throughput/scale
-measurement at anything near the legacy system's 300K-record scale.
+measurement at anything near the legacy system's full daily batch volume.
+
 
 ## Qualitative comparison (architecturally grounded)
 
@@ -53,15 +54,16 @@ measurement at anything near the legacy system's 300K-record scale.
 
 ## What a rigorous head-to-head benchmark would require
 
-1. Generate synthetic 834 data at legacy-equivalent scale (~300K member
-   records) using `generate_batch()` with a large `subscribers_per_file`.
+1. Generate synthetic 834 data at a representative daily-batch scale using
+   `generate_batch()` with a large `subscribers_per_file`.
 2. Run `DeltaMedallionPipeline.run()` against it on a representative
    Databricks cluster size, timed with the methodology proposed in
    [Chapter 26](26-benchmark-framework.md).
 3. Compare wall-clock time directly against the legacy system's ~1 hour
    figure, at the same record count.
 
+
 This has not yet been executed in this repository — the honest claim this
-handbook makes is about **architecture** (distributed vs. serial,
+documentation makes is about **architecture** (distributed vs. serial,
 quarantine vs. hard-fail, governed analytics vs. none), not a measured
 speedup multiplier.

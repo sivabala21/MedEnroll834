@@ -7,6 +7,8 @@ X12 segment, schema fixed, content untouched beyond splitting into
 elements. Its job is to preserve the source data exactly as received, so
 every downstream transformation can be replayed or audited against it.
 
+![Medallion architecture: Bronze, Silver, Gold](assets/img/medallion architecture.png)
+
 ## `BronzeLayer.ingest()`
 
 ```python
@@ -17,38 +19,42 @@ class BronzeLayer:
 
     def ingest(self, landing_path: str) -> DataFrame:
         self.logger = setup_logging("bronze")
-        log_pipeline_start(self.logger, "BRONZE", f"landing_path={landing_path}")
+        start_time = log_pipeline_start(self.logger, "BRONZE", f"landing_path={landing_path}")
 
         path = Path(landing_path)
         files = sorted(path.glob("*.834"))
         rows = []
-        for file in files:
-            content = file.read_text(encoding="utf-8")
-            file_name = file.name
-            for seg_order, line in enumerate(split_segments(content)):
-                elements = line.split("*")
-                rows.append({
-                    "file_name": file_name,
-                    "segment_id": elements[0],
-                    "elements": elements,
-                    "raw_segment": line,
-                    "seg_order": seg_order,
-                })
+        try:
+            for file in files:
+                content = file.read_text(encoding="utf-8")
+                file_name = file.name
+                for seg_order, line in enumerate(split_segments(content)):
+                    elements = line.split("*")
+                    rows.append({
+                        "file_name": file_name,
+                        "segment_id": elements[0],
+                        "elements": elements,
+                        "raw_segment": line,
+                        "seg_order": seg_order,
+                    })
 
-        parsed = self.spark.createDataFrame(rows, schema=BRONZE_SCHEMA)
-        parsed = parsed.withColumn("ingested_at", F.current_timestamp().cast("string"))
+            parsed = self.spark.createDataFrame(rows, schema=BRONZE_SCHEMA)
+            parsed = parsed.withColumn("ingested_at", F.current_timestamp().cast("string"))
 
-        table_path = self.config["layers"]["bronze"]["path"]
-        (
-            parsed.write.format("delta")
-            .mode("overwrite")
-            .option("mergeSchema", "true")
-            .option("delta.autoOptimize.optimizeWrite", "true")
-            .save(table_path)
-        )
+            table_path = self.config["layers"]["bronze"]["path"]
+            (
+                parsed.write.format("delta")
+                .mode("overwrite")
+                .option("mergeSchema", "true")
+                .option("delta.autoOptimize.optimizeWrite", "true")
+                .save(table_path)
+            )
+        except Exception:
+            log_pipeline_error(self.logger, "BRONZE", f"landing_path={landing_path}", start_time)
+            raise
 
         result_count = parsed.count()
-        log_pipeline_end(self.logger, "BRONZE", f"segments_loaded={result_count}")
+        log_pipeline_end(self.logger, "BRONZE", f"segments_loaded={result_count}", start_time)
         return parsed
 ```
 

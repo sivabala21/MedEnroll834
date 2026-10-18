@@ -23,83 +23,28 @@ use production member data** — all 834 files are synthetically generated
   explicitly kept as two separate consumption paths.
 - Demonstrate modern data-engineering practices — idempotent pipelines,
   data-quality quarantine, Airflow orchestration, CI/CD, and Infrastructure
-  as Code — in a portfolio-ready project.
+  as Code — in a this project.
 
 ## Conceptual model
 
-The conceptual model separates **enrollment processing** from **analytical
-data consumption**. Member, employer group, subscriber, benefit plan, and
-enrollment entities drive enrollment decisions; the same validated data also
-feeds historical/analytical reporting.
+At a conceptual level, five business entities drive the whole system: a
+**member** belongs to a **subscriber**'s policy, the subscriber is covered
+under an **employer group**'s contract, that group offers one or more
+**benefit plans**, and every addition, change, or termination to a
+member's coverage is captured as an **enrollment** event. The pipeline's
+entire job is to take an inbound 834 file, resolve these five entities and
+the relationships between them, and make the result available two ways at
+once: as live, queryable records for **operational** use (a member's
+current plan, a subscriber's dependents) and as historical, aggregated
+records for **analytical** use (enrollment trends by plan, by group, by
+time period).
 
-```mermaid
-flowchart LR
-
-    subgraph SOURCE["SOURCE DOMAIN"]
-        S["834 Enrollment Transaction"]
-    end
-
-    subgraph PROCESS["ENROLLMENT PROCESSING DOMAIN"]
-        P1["Transaction Ingestion"]
-        P2["Enrollment Normalization"]
-        P3["Validation & Data Quality"]
-        P4["Enrollment Business Rules"]
-        P1 --> P2 --> P3 --> P4
-    end
-
-    subgraph OPERATIONAL["OPERATIONAL DATA DOMAIN"]
-        O1["Employer Group"]
-        O2["Subscriber"]
-        O3["Member"]
-        O4["Benefit Plan"]
-        O5["Enrollment"]
-        O6["Address"]
-        O7["Transaction Control"]
-        O8["Rejected Record"]
-    end
-
-    subgraph ANALYTICAL["ANALYTICAL DATA DOMAIN"]
-        A1["Historical Enrollment"]
-        A2["Member Analytics"]
-        A3["Plan Analytics"]
-        A4["Group Analytics"]
-    end
-
-    subgraph CONSUMPTION["CONSUMPTION DOMAIN"]
-        C1["Operational Reporting"]
-        C2["Analytical Reporting"]
-        C3["Natural Language Analytics"]
-    end
-
-    S --> P1
-    P4 --> O1
-    P4 --> O2
-    P4 --> O3
-    P4 --> O4
-    P4 --> O5
-    P4 --> O6
-    P1 --> O7
-    P3 -. "Invalid" .-> O8
-    O1 --> A1
-    O2 --> A1
-    O3 --> A1
-    O4 --> A1
-    O5 --> A1
-    A1 --> A2
-    A1 --> A3
-    A1 --> A4
-    O5 --> C1
-    A2 --> C2
-    A3 --> C2
-    A4 --> C2
-    A2 --> C3
-    A3 --> C3
-    A4 --> C3
-```
+![Conceptual model](assets/img/conceptual-model.png)
 
 Rejected/invalid records enter a controlled remediation path (quarantine)
 rather than silently failing or corrupting downstream tables — see
 [Chapter 16](16-data-quality-reject-handling.md).
+
 
 ## Target workflow
 

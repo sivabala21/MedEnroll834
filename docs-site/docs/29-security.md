@@ -2,7 +2,7 @@
 
 ## Credential handling
 
-### Short-lived, minted-on-demand blob storage credentials
+### Blob storage credentials
 
 > Source: [`src/medenroll834/storage/blob_storage.py`](https://github.com/yourusername/medenroll834/blob/main/src/medenroll834/storage/blob_storage.py)
 
@@ -20,12 +20,10 @@ def _client_and_bucket():
     return s3, creds["bucket"]
 ```
 
-Every call mints a **fresh set of S3-compatible credentials, valid ~10
-minutes**, from a single long-lived token — there is no long-lived AWS
-access key sitting in memory or logs for an attacker to exfiltrate and
-reuse later. The POC's security model is explicitly: "one secret
-(`BLOB_STORAGE_TOKEN`) that can only mint short windows of access," not
-"permanent keys."
+A single long-lived `BLOB_STORAGE_TOKEN` is used only to mint short-lived,
+scoped credentials on each call — see [Chapter 5](05-technology-decisions.md)
+for why a third-party blob provider was used in place of AWS S3 for this
+proof of concept.
 
 ### AWS enterprise-target credentials
 
@@ -66,25 +64,11 @@ as `${VAR}` references rather than inlining them.
 ```
 
 No `s3:*`, no cross-bucket access, no bucket-policy modification rights.
-
-## S3 bucket hardening (Terraform)
-
-```hcl
-resource "aws_s3_bucket_public_access_block" "med834" {
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "med834" {
-  rule { apply_server_side_encryption_by_default { sse_algorithm = "AES256" } }
-}
-```
-
-Plus a bucket policy that **denies any request over plain HTTP**
-(`aws:SecureTransport == false`), and `BucketOwnerEnforced` ownership
-controls that disable ACL-based access entirely.
+This IAM policy and its Terraform-managed bucket (encryption, versioning,
+public-access blocking — see [Chapter 7](07-aws-s3-setup.md)) apply once a
+deployment moves to the enterprise AWS S3 target; a reader on a standard
+paid AWS account does not need to configure anything beyond attaching this
+policy to the pipeline's IAM role.
 
 ## Database connection security
 
@@ -115,7 +99,7 @@ PHI/PII, per [`SECURITY.md`](https://github.com/yourusername/medenroll834/blob/m
   in transit (`sslmode=require`, HTTPS-only S3 policy) are both already
   enforced at the infrastructure level documented above.
 - Access logging/auditing is intentionally left as a
-  [future improvement](38-future-improvements.md) — out of scope for this
+  [future improvement](37-future-improvements.md) — out of scope for this
   POC's synthetic-data threat model.
 
 ## CI security scanning
@@ -136,3 +120,4 @@ security:
 (e.g. `eval`, hardcoded secrets, insecure deserialization); `safety` checks
 installed dependencies against the PyUp/OSV known-vulnerability database.
 See [Chapter 31](31-ci-cd.md) for the full CI pipeline.
+

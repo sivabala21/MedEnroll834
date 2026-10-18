@@ -71,12 +71,3 @@ source file via a transaction identifier
 legacy proprietary intermediate format allows, which matters directly for
 HIPAA-adjacent compliance reviews (see [Chapter 29](29-security.md)).
 
-## Portfolio / organizational impact
-
-Beyond the direct operational metrics, this project demonstrates (to a
-hiring manager, architecture review board, or stakeholder) a complete,
-working reference implementation of a modern healthcare data platform
-pattern — distributed processing, medallion architecture, OLTP/OLAP
-separation, IaC, CI/CD, and dual BI/AI analytics — that is reusable for
-other EDI transaction types (835, 837, 270/271, etc.) beyond 834
-enrollment, per the framing in [Chapter 1](01-project-overview.md).

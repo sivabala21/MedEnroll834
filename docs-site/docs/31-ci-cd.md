@@ -20,16 +20,16 @@ jobs:
   lint:
     steps:
       - run: pip install -r requirements.txt
-      - run: ruff check src/ tests/
+      - run: ruff check src/ 02_tests/
       - run: mypy src/
-      - run: black --check src/ tests/
+      - run: black --check src/ 02_tests/
 
   test:
     strategy:
       matrix:
         python-version: ['3.10', '3.11']
     steps:
-      - run: pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+      - run: pytest 02_tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
       - uses: codecov/codecov-action@v3
 
   security:
@@ -46,17 +46,11 @@ jobs:
 - **`security`** — `bandit` (static security scan of `src/`) and `safety`
   (dependency vulnerability check) — see [Chapter 29](29-security.md).
 
-!!! warning "Known path discrepancy"
-    `ci.yml` references `tests/`, but the test suite actually lives at
-    `02_tests/` per the repository's numbered-directory convention (see
-    [Chapter 6](06-repository-structure.md)) and `pyproject.toml`'s
-    `testpaths = ["02_tests"]`. This is a real, currently-unresolved
-    mismatch left over from before the repo's enterprise-standard
-    reorganization — running `pytest tests/` in CI as written would not
-    find the test suite at `02_tests/`. Fixing `ci.yml` to reference
-    `02_tests/` (matching the `Makefile`'s `pytest 02_tests/ -v` target) is
-    tracked as a concrete item in
-    [Chapter 38](38-future-improvements.md).
+`lint` and `test` both reference `src/` and `02_tests/`, matching
+`pyproject.toml`'s `testpaths = ["02_tests"]` and the `Makefile`'s own
+`pytest 02_tests/ -v` target exactly — an earlier version of this workflow
+referenced a non-existent `tests/` directory, which meant CI would not
+actually find or run the test suite; that mismatch has been fixed.
 
 ## CD pipeline (`cd.yml`)
 
@@ -101,16 +95,6 @@ reviewers/approval rules in repo settings) but the actual deployment
 command (`kubectl apply` / `helm upgrade`) is intentionally commented out,
 since this POC has no Kubernetes/Helm target yet.
 
-## Documentation site deployment (this handbook)
-
-This GitBook-style handbook (`docs-site/`) is built and deployed by its own
-dedicated workflow — see
-[`.github/workflows/docs.yml`](https://github.com/yourusername/medenroll834/blob/main/.github/workflows/docs.yml) — on every
-push to `main` that touches `docs-site/**`, publishing to GitHub Pages via
-`mkdocs gh-deploy`. This is the practical "docs-as-code" delivery mechanism
-requested for this project: documentation changes ship through the exact
-same pull-request review process as code changes.
-
 ## Local equivalents (Makefile)
 
 ```makefile
@@ -121,5 +105,6 @@ format:  black src/ 02_tests/ && ruff check --fix src/ 02_tests/
 ```
 
 Running `make lint test` locally before pushing exercises the same
-ruff/mypy/pytest checks CI will run (modulo the `tests/` vs. `02_tests/`
-discrepancy noted above), catching most CI failures before they happen.
+ruff/mypy/pytest checks CI runs, catching most CI failures before they
+happen.
+

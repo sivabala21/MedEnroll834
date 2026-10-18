@@ -75,21 +75,49 @@ choice for an analytics/reporting path (as opposed to the OLTP load, which
 intentionally fails hard and rolls back, because operational data integrity
 matters more than reporting completeness).
 
-## Operational "all_done" failure handling
+## Operational failure handling: archive vs. quarantine
 
 ```python
-@task(trigger_rule="all_done")
-def archive_blob(_genie: dict) -> int:
+@task
+def archive_blob(keys: list[str]) -> int:
+    ...  # default all_success trigger rule
+
+@task(trigger_rule="one_failed")
+def quarantine_failed_files(keys: list[str] | None) -> int:
     ...
 ```
 
-`archive_blob` is the one task in the DAG that **deliberately ignores**
-upstream task state via `trigger_rule="all_done"` — it runs whether
-`generate_report`/`ask_genie` succeeded, failed, or were skipped. This
-reflects the operational reality that a processed landing file should not
-sit in `landing/834/` indefinitely just because a downstream analytics step
-had a problem; the DAG run as a whole is still reported as failed if an
-upstream task failed, but the file movement is not blocked by it.
+Unlike an earlier `trigger_rule="all_done"` design (which re-listed
+`landing/834/` from scratch and could archive a file Databricks had
+actually failed to process), the archive/quarantine split is now both
+**run-scoped** and **failure-aware**:
+
+- `archive_blob` has the **default `all_success`** trigger rule and is
+  wired directly to `push_to_uc_volume`/`load_oltp_database`'s own XCom
+  outputs (not to the optional `generate_report`/`ask_genie` branch), so
+  Airflow automatically skips it if any task in the core processing chain
+  failed — it is structurally impossible for it to archive a file that
+  Databricks or the OLTP load never actually succeeded on.
+- `quarantine_failed_files` uses `trigger_rule="one_failed"` and is wired
+  to every task in that same core chain (`upload_to_blob`,
+  `push_to_uc_volume`, `run_databricks_job`, `load_oltp_database`).
+  Airflow's `ONE_FAILED` rule fires whenever a direct upstream is `FAILED`
+  **or** `UPSTREAM_FAILED` — confirmed against the Airflow 3.3.0
+  `TriggerRuleDep` source — so a failure anywhere in the chain reaches this
+  task even if it only manifests several hops downstream as
+  `UPSTREAM_FAILED`. It moves this run's exact files to `failed/834/`
+  instead of leaving them ambiguous in `landing/834/`.
+- Both tasks operate on the **exact blob keys this run uploaded**
+  (`upload_to_blob` returns them, threaded unchanged through
+  `push_to_uc_volume` via XCom) rather than re-listing the bucket, so a
+  concurrent run's files are never touched by either path.
+- A missing/`None` `keys` XCom (e.g. `upload_to_blob` itself is what
+  failed, so it never returned anything) is handled as a no-op in
+  `quarantine_failed_files`, not an error — there is nothing to move.
+
+The DAG run as a whole is still reported as failed if any upstream task
+failed; archive/quarantine only decide what happens to the landing files,
+not the DAG run's final state.
 
 ## Validation errors are not failures
 
@@ -110,3 +138,9 @@ Airflow's retry and failure-reporting path.
 | Single bad analytics SQL query | `generate_report()` | Caught per-query, rendered as an error row, report still completes |
 | Member record fails validation | `SilverLayer._apply_validation()` | Not an exception — routed to quarantine (see Ch. 16) |
 | Databricks SQL warehouse read failure | `_run_query()` / `_read_gold_from_databricks()` | `RuntimeError` with the Databricks error message, propagated up |
+| Core chain (push/Databricks/OLTP) failure | `quarantine_failed_files` (`trigger_rule="one_failed"`) | This run's exact files moved to `failed/834/`; never archived |
+
+## Verified archive evidence
+
+![Archive test evidence](assets/img/archive test evidence.png)
+

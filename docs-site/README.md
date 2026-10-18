@@ -1,4 +1,4 @@
-# MedEnroll834 Engineering Handbook (docs-site)
+# MedEnroll834 Documentation (docs-site)
 
 This folder contains the **GitBook-style documentation site** for the
 MedEnroll834 project, built with [MkDocs](https://www.mkdocs.org/) +
@@ -9,14 +9,15 @@ native rendering of the project's architecture diagrams.
 It is **free to host** on GitHub Pages — no GitBook.com account or paid
 plan required.
 
-## 38 chapters, organized docs-as-code
+## 37 chapters, organized docs-as-code
 
-All 38 chapters live under `docs/` as plain Markdown files, numbered
-`01-project-overview.md` through `38-future-improvements.md`, grouped into
+All 37 chapters live under `docs/` as plain Markdown files, numbered
+`01-project-overview.md` through `37-future-improvements.md`, grouped into
 6 sections in `mkdocs.yml`'s `nav`. Every chapter is written from, and
 links back to, the actual source code in this repository — see the root
-[`README.md`](../README.md) and [`08_docs/`](../08_docs/) for the
-original architecture narrative this handbook expands on.
+[`README.md`](../README.md) for the project overview this documentation
+expands on.
+
 
 ## Running locally
 

@@ -107,3 +107,8 @@ def generate_report(_summary: dict) -> str:
 
 Each run produces a uniquely timestamped report file — historical reports
 accumulate under `audit/reports/` rather than overwriting each other.
+
+## Verified report evidence
+
+![Audit report test evidence](assets/img/aduit-report test evidence.png)
+

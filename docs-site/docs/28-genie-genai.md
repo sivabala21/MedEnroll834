@@ -94,3 +94,8 @@ path, so:
 - Swapping or removing Genie has zero blast radius on the rest of the
   system — see [Chapter 4](04-modern-architecture.md) for the architectural
   framing this reflects.
+
+## Verified Genie evidence
+
+![Genie proof-of-concept conversation](assets/img/Genie POC.png)
+

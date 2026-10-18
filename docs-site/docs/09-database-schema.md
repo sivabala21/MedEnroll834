@@ -8,7 +8,7 @@ documents both with their actual DDL.
 
 > Source: [`04_infrastructure/02_sql/02_oltp/`](https://github.com/yourusername/medenroll834/blob/main/04_infrastructure/02_sql/02_oltp/)
 
-![OLTP ERD](assets/img/oltp-erd.svg)
+![OLTP ERD](assets/img/Med834Enrl-OLT-db.png)
 
 ### CORE schema
 
@@ -70,7 +70,7 @@ member-plan lookup path. See
 
 > Source: [`04_infrastructure/02_sql/03_olap/04_gold/`](https://github.com/yourusername/medenroll834/blob/main/04_infrastructure/02_sql/03_olap/04_gold/)
 
-![OLAP ERD](assets/img/olap-erd.svg)
+![OLAP ERD](assets/img/Med834Enrl-OLAP-db.png)
 
 `FACT_ENROLLMENT` sits at the center, surrounded by five dimensions — all
 Delta tables in the `GOLD` schema:
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS GOLD.FACT_ENROLLMENT (
   GRGR_KEY BIGINT NOT NULL,
   TXN_SRC_KEY BIGINT NOT NULL,
   COVERAGE_START_DATE_KEY INT NOT NULL,
-  COVERAGE_END_DATE_KEY INT,
+  COVERAGE_END_DATE_KEY INT NOT NULL DEFAULT 99991231,
   MAINTENANCE_TYPE_CODE STRING NOT NULL,
   ENROLLMENT_STATUS STRING NOT NULL,
   ENROLLMENT_COUNT INT NOT NULL,
@@ -92,6 +92,11 @@ CREATE TABLE IF NOT EXISTS GOLD.FACT_ENROLLMENT (
 USING DELTA
 COMMENT 'Gold enrollment fact. Grain: one row per enrollment event.';
 ```
+
+`COVERAGE_END_DATE_KEY` (and `TERM_DT`/`END_DATE` throughout OLTP and OLAP)
+is never `NULL` — open-ended coverage stores the fixed `9999-12-31` /
+`99991231` sentinel instead, joining against a dedicated `DIM_DATE` "Open
+Ended" row (see [Chapter 19](19-olap-star-schema.md)).
 
 ### Dimensions (all SCD Type 2 via `CURRENT_FLAG`, except `DIM_DATE`)
 

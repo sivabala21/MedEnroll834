@@ -153,3 +153,8 @@ def load_oltp_database(_run_id: int) -> dict:
 
 See [Chapter 21](21-airflow-dag-implementation.md) for the full DAG task
 graph this step sits in.
+
+## Verified load evidence
+
+![OLTP load test evidence](assets/img/OLTP test evidence.png)
+
