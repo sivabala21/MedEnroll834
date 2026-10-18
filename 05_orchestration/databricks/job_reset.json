@@ -9,7 +9,8 @@
           "notebook_path": "/Shared/med834enrl/med834_medallion_job",
           "base_parameters": {
             "landing_path": "/Volumes/med834enrl/edi/landing/834/",
-            "catalog": "med834enrl"
+            "catalog": "med834enrl",
+            "airflow_run_id": "manual"
           }
         }
       }
