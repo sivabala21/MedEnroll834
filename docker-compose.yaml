@@ -16,6 +16,10 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-webserver:8080/execution/"
     AIRFLOW__API_AUTH__JWT_SECRET: "med834-shared-jwt-secret-key-change-me"
     AIRFLOW__CORE__FERNET_KEY: "FB0o_zt4e3Ziq3LdUUO7F2Z95cvFFx16hU8jTeR1ASM="
+    # SimpleAuthManager (Airflow 3.x default) user + password config.
+    # The users create CLI command is FAB-only and errors on SimpleAuthManager
+    # (AttributeError: find_role), so credentials are managed here instead.
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER__USERS: "admin:admin"
     _PIP_ADDITIONAL_REQUIREMENTS: "databricks-sdk>=0.20.0 boto3>=1.34.0 psycopg2-binary>=2.9.9"
     # Pipeline configuration (also settable as Airflow Variables)
     BLOB_STORAGE_TOKEN: ${BLOB_STORAGE_TOKEN}
@@ -30,11 +34,15 @@ x-airflow-common: &airflow-common
     DATABRICKS_WAREHOUSE_ID: ${DATABRICKS_WAREHOUSE_ID}
     GENIE_SPACE_ID: ${GENIE_SPACE_ID}
     PYTHONPATH: /opt/airflow/project
+    # MedEnroll834 pipeline logging (src/medenroll834/common/logging.py)
+    MED834_LOG_LEVEL: ${MED834_LOG_LEVEL:-INFO}
+    MED834_LOG_FILE: ${MED834_LOG_FILE:-}
   volumes:
     - ./05_orchestration/airflow/01_dags:/opt/airflow/dags
     - airflow-logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - .:/opt/airflow/project
+    - ./airflow_passwords.json.generated:/opt/airflow/simple_auth_manager_passwords.json.generated
   user: "50000:0"
   depends_on: &airflow-common-depends-on
     redis:
@@ -104,8 +112,11 @@ services:
       - -c
       - |
         airflow db migrate
-        airflow users create --username admin --password admin \
-          --firstname admin --lastname admin --role Admin --email admin@example.com || true
+        # NOTE: do NOT run `airflow users create` here — it is a FAB-only command and
+        # errors on the SimpleAuthManager default auth manager with
+        # AttributeError: 'AirflowSecurityManagerV2' object has no attribute 'find_role'.
+        # Users/passwords are configured via AIRFLOW__CORE__SIMPLE_AUTH_MANAGER__USERS
+        # and the bind-mounted simple_auth_manager_passwords.json file.
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: "true"

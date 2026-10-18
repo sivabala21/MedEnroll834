@@ -34,7 +34,7 @@ RUN pip install --upgrade pip && \
 FROM dependencies as application
 
 # Copy application code
-COPY 01_src/ ./src/
+COPY src/ ./src/
 COPY 03_config/ ./config/
 COPY README.md LICENSE ./
 

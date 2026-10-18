@@ -32,7 +32,7 @@ docker-compose down
 ## Project Structure
 
 ```
-01_src/          Source code
+src/             Source code (not numbered — Python can't import `01_src`)
 02_tests/        Test suite
 03_config/       Configuration
 04_infrastructure/ IaC & SQL
@@ -40,7 +40,6 @@ docker-compose down
 06_deploy/       Deployment
 07_scripts/      Utilities
 08_docs/         Documentation
-09_monitoring/   Observability
 10_data/         Data storage
 ```
 

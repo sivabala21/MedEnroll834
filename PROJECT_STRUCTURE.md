@@ -8,7 +8,8 @@ All directories are prefixed with numbers (01_, 02_, etc.) following enterprise 
 
 ```
 MedEnroll834/
-├── 01_src/                    # Source code
+├── src/                       # Source code (not numbered — Python import paths
+│                               #   cannot start with a digit, e.g. `01_src`)
 ├── 02_tests/                  # Test suite
 ├── 03_config/                 # Configuration
 ├── 04_infrastructure/         # IaC & SQL
@@ -16,7 +17,6 @@ MedEnroll834/
 ├── 06_deploy/                 # Deployment configs
 ├── 07_scripts/                # Utility scripts
 ├── 08_docs/                   # Documentation
-├── 09_monitoring/             # Observability
 ├── 10_data/                   # Data storage
 ├── 11_build/                  # Build artifacts
 └── 12_tools/                  # Dev tools
