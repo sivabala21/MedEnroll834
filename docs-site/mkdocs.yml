@@ -1,4 +1,4 @@
-﻿site_name: MedEnroll834 â€” Engineering Handbook
+﻿site_name: MedEnroll834 Documentation
 site_description: >-
   Modern Distributed Data Platform for Growing Data â€” a healthcare X12 834
   enrollment modernization built on PySpark, Delta Lake, Databricks, Airflow,
@@ -77,7 +77,9 @@ extra:
 nav:
   - Home: index.md
   - Overview & Business Context:
+      - 00. Healthcare Enrollment Primer: 00-healthcare-primer.md
       - 01. Project Overview: 01-project-overview.md
+
       - 02. Business Problem: 02-business-problem.md
       - 03. Legacy Architecture: 03-legacy-architecture.md
       - 04. Modern Architecture: 04-modern-architecture.md
@@ -118,6 +120,6 @@ nav:
   - Impact & Portfolio:
       - 34. Legacy vs Modern Benchmark: 34-legacy-vs-modern-benchmark.md
       - 35. Business Impact: 35-business-impact.md
-      - 36. Interview Explanation: 36-interview-explanation.md
-      - 37. Portfolio README: 37-portfolio-readme.md
-      - 38. Future Improvements: 38-future-improvements.md
+      - 36. Portfolio README: 36-portfolio-readme.md
+      - 37. Future Improvements: 37-future-improvements.md
+

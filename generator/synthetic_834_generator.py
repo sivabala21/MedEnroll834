@@ -52,9 +52,29 @@ STATES = [
     "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
     "WI", "WY",
 ]
-PLAN_CODES = ["GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"]
+# Plan codes are plain numeric identifiers (e.g. "100"), not business-friendly
+# names. PLAN_TIER_NAME maps each code to a display tier for PLAN_NAME synthesis
+# downstream (silver/gold/OLAP), since the code itself no longer carries that.
+PLAN_CODES = ["100", "101", "102", "103", "104", "105", "106", "107"]
+PLAN_TIER_NAME = {
+    "100": "GOLD", "101": "SILVER", "102": "BRONZE", "103": "PLATINUM",
+    "104": "HDHP", "105": "EPO", "106": "PPO", "107": "HMO",
+}
 RELATIONSHIP = ["18", "01", "03", "19"]
 ADR_TYP = ["HOME", "MAILING", "BILLING", "WORK"]
+# Pure-numeric employer group pool (GRGR_NUM), e.g. "3341" for a NEWYORK-style
+# group. Fixed pool of 50 groups so the OLAP DIM_GROUP keeps bounded cardinality.
+GROUP_NUMBERS = [str(3300 + i) for i in range(50)]
+
+
+def _numeric_id(used: set, low: int = 1000000, high: int = 9999999) -> str:
+    """Generate a unique plain-digit identifier (e.g. "2043434") for a member/
+    subscriber, avoiding collisions within a single file's `used` set."""
+    while True:
+        candidate = random.randint(low, high)
+        if candidate not in used:
+            used.add(candidate)
+            return str(candidate)
 
 
 def _random_date(start_year: int = 1970, end_year: int = 2010) -> str:
@@ -172,6 +192,14 @@ def build_bgn(ref: str, file_date: str) -> str:
     return f"BGN*00*{ref}*{file_date}*1200**{file_date}"
 
 
+def build_ref_group(grgr_num: str) -> str:
+    """REF*1L*<group number> - X12 834 standard Group or Policy Number
+    reference. Carries the employer group's plain-digit GRGR_NUM
+    (e.g. "3341") through to Silver/Gold so DIM_GROUP.GRGR_ID is populated
+    from real file content instead of a hardcoded default."""
+    return f"REF*1L*{grgr_num}"
+
+
 def build_834_file(
     file_date: str,
     num_subscribers: int = 100,
@@ -182,6 +210,7 @@ def build_834_file(
     txn_count = 0
     isa_ctrl = _control_number()
     gs_ctrl = _control_number()
+    used_ids: set = set()
 
     for s in range(num_subscribers):
         txn_count += 1
@@ -191,9 +220,9 @@ def build_834_file(
         segments.append(build_bgn(ref, file_date))
 
         sub_first, sub_last, sub_mid = _random_name()
-        sub_id = f"SUB-{file_date}-{s + 1:04d}"
+        sub_id = _numeric_id(used_ids)
         sub_dob = _random_date(1950, 2005)
-        grgr_id = f"GRGR-{random.randint(1, 50):04d}"
+        grgr_num = random.choice(GROUP_NUMBERS)
         plan_code = random.choice(PLAN_CODES)
         eff_dt = file_date
         term_dt = _future_date(1) if random.random() > 0.3 else ""
@@ -201,6 +230,7 @@ def build_834_file(
         segments.append(build_hl("1", "", "20", str(dependents_per_sub + 1)))
         segments.append(build_nm1("IL", sub_last, sub_first, sub_mid, "0F", sub_id))
         segments.append(build_ins("18"))
+        segments.append(build_ref_group(grgr_num))
         segments.append(build_dtp("291", sub_dob))
         segments.append(build_dtp("472", eff_dt))
         if term_dt:
@@ -212,11 +242,12 @@ def build_834_file(
             dep_first, dep_last, dep_mid = _random_name()
             dep_rel = random.choice(RELATIONSHIP)
             dep_dob = _random_date(1990, 2020)
-            dep_id = f"DEP-{file_date}-{s + 1:04d}-{d + 1:02d}"
+            dep_id = _numeric_id(used_ids)
             dep_eff = eff_dt if random.random() > 0.2 else _future_date(0)
             segments.append(build_hl(str(d + 2), "1", "21", ""))
             segments.append(build_nm1("IL", dep_last, dep_first, dep_mid, "0F", dep_id))
             segments.append(build_ins(dep_rel))
+            segments.append(build_ref_group(grgr_num))
             segments.append(build_dtp("291", dep_dob))
             segments.append(build_dtp("348", dep_eff))
             segments.append(build_hd("DEP", plan_code))
