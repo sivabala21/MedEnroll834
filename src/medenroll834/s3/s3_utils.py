@@ -13,6 +13,10 @@ from typing import List
 
 import boto3
 
+from src.medenroll834.common.logging import setup_logging
+
+_LOGGER = setup_logging("s3_utils")
+
 
 def _client():
     return boto3.client("s3", region_name=os.environ.get("AWS_REGION", "us-east-1"))
@@ -20,7 +24,12 @@ def _client():
 
 def upload_file(local_path: str, bucket: str, key: str) -> str:
     """Upload a single file to s3://bucket/key and return the s3 URI."""
-    _client().upload_file(local_path, bucket, key)
+    try:
+        _client().upload_file(local_path, bucket, key)
+    except Exception:
+        _LOGGER.exception("S3 | upload failed local_path=%s bucket=%s key=%s", local_path, bucket, key)
+        raise
+    _LOGGER.info("S3 | uploaded %s -> s3://%s/%s", local_path, bucket, key)
     return f"s3://{bucket}/{key}"
 
 
@@ -35,10 +44,15 @@ def list_objects(bucket: str, prefix: str) -> List[str]:
     """List object keys under a prefix (excludes folder placeholder keys)."""
     paginator = _client().get_paginator("list_objects_v2")
     keys: List[str] = []
-    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
-        for obj in page.get("Contents", []):
-            if not obj["Key"].endswith("/"):
-                keys.append(obj["Key"])
+    try:
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                if not obj["Key"].endswith("/"):
+                    keys.append(obj["Key"])
+    except Exception:
+        _LOGGER.exception("S3 | list_objects failed bucket=%s prefix=%s", bucket, prefix)
+        raise
+    _LOGGER.debug("S3 | listed %d object(s) under s3://%s/%s", len(keys), bucket, prefix)
     return keys
 
 
@@ -51,14 +65,24 @@ def archive_834(bucket: str, key: str, archive_prefix: str = "archive/834/") -> 
     name = Path(key).name
     dest = f"{archive_prefix.rstrip('/')}/{name}"
     s3 = _client()
-    s3.copy_object(Bucket=bucket, CopySource={"Bucket": bucket, "Key": key}, Key=dest)
-    s3.delete_object(Bucket=bucket, Key=key)
+    try:
+        s3.copy_object(Bucket=bucket, CopySource={"Bucket": bucket, "Key": key}, Key=dest)
+        s3.delete_object(Bucket=bucket, Key=key)
+    except Exception:
+        _LOGGER.exception("S3 | archive failed bucket=%s key=%s -> %s", bucket, key, dest)
+        raise
+    _LOGGER.info("S3 | archived s3://%s/%s -> s3://%s/%s", bucket, key, bucket, dest)
     return dest
 
 
 def put_text(bucket: str, key: str, text: str, content_type: str = "text/plain") -> str:
     """Write a string object (used for audit logs and reports)."""
-    _client().put_object(
-        Bucket=bucket, Key=key, Body=text.encode("utf-8"), ContentType=content_type
-    )
+    try:
+        _client().put_object(
+            Bucket=bucket, Key=key, Body=text.encode("utf-8"), ContentType=content_type
+        )
+    except Exception:
+        _LOGGER.exception("S3 | put_text failed bucket=%s key=%s", bucket, key)
+        raise
+    _LOGGER.info("S3 | wrote text object s3://%s/%s (%d bytes)", bucket, key, len(text))
     return f"s3://{bucket}/{key}"

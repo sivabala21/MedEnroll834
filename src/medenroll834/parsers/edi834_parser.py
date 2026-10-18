@@ -17,6 +17,10 @@ from pyspark.sql.types import (
 )
 
 from src.medenroll834.ingestion.bronze import split_segments
+from src.medenroll834.common.logging import setup_logging
+
+_LOGGER = setup_logging("edi834_parser")
+
 BRONZE_SCHEMA = StructType([
     StructField("file_name", StringType(), True),
     StructField("segment_id", StringType(), True),
@@ -69,11 +73,17 @@ class EDI834Parser:
     def parse_files(self, landing_path: str) -> DataFrame:
         path = Path(landing_path)
         files = sorted(path.glob("*.834"))
+        _LOGGER.info("PARSER | found %d .834 file(s) under %s", len(files), landing_path)
         rows = []
         for file in files:
-            content = file.read_text(encoding="utf-8")
+            try:
+                content = file.read_text(encoding="utf-8")
+            except Exception:
+                _LOGGER.exception("PARSER | failed to read file=%s", file.name)
+                raise
             file_name = file.name
-            for seg_order, line in enumerate(split_segments(content)):
+            segments = split_segments(content)
+            for seg_order, line in enumerate(segments):
                 elements = line.split("*")
                 rows.append({
                     "file_name": file_name,
@@ -82,11 +92,14 @@ class EDI834Parser:
                     "raw_segment": line,
                     "seg_order": seg_order,
                 })
+            _LOGGER.debug("PARSER | file=%s segments=%d", file_name, len(segments))
         return self.spark.createDataFrame(rows, schema=BRONZE_SCHEMA)
 
     def parse_dataframe(self, df: DataFrame, file_name_col: str = "raw") -> DataFrame:
         rows = []
+        row_count = 0
         for row in df.collect():
+            row_count += 1
             content = row[file_name_col]
             file_name = row.get("file_name", "unknown")
             for seg_order, line in enumerate(split_segments(content)):
@@ -98,4 +111,5 @@ class EDI834Parser:
                     "raw_segment": line,
                     "seg_order": seg_order,
                 })
+        _LOGGER.info("PARSER | parsed %d input row(s) into %d segment row(s)", row_count, len(rows))
         return self.spark.createDataFrame(rows, schema=BRONZE_SCHEMA)

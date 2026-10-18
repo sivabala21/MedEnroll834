@@ -13,12 +13,13 @@ from src.medenroll834.common.logging import setup_logging
 class DataFrameValidator:
     """Validates member DataFrames using Spark SQL expressions."""
 
-    VALID_PLANS = {"GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"}
+    VALID_PLANS = {"100", "101", "102", "103", "104", "105", "106", "107"}
 
     def __init__(self):
         self.logger = setup_logging("validator")
 
     def validate(self, df: DataFrame) -> DataFrame:
+        self.logger.debug("VALIDATOR | applying business rules to member DataFrame")
         errors = F.filter(
             F.array(
                 F.when(F.col("member_id") == "", F.lit("Member ID is required")),

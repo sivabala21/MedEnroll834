@@ -15,7 +15,12 @@ from pyspark.sql.types import (
 )
 from pyspark.sql.window import Window
 
-from src.medenroll834.common.logging import log_pipeline_end, log_pipeline_start, setup_logging
+from src.medenroll834.common.logging import (
+    log_pipeline_end,
+    log_pipeline_error,
+    log_pipeline_start,
+    setup_logging,
+)
 
 
 SILVER_SCHEMA = StructType([
@@ -58,8 +63,24 @@ class SilverLayer:
 
     def transform(self, bronze_df: DataFrame, write: bool = True) -> DataFrame:
         self.logger = setup_logging("silver")
-        log_pipeline_start(self.logger, "SILVER", "transforming bronze to silver")
+        start_time = log_pipeline_start(self.logger, "SILVER", "transforming bronze to silver")
+        try:
+            base = self._transform_impl(bronze_df, write)
+        except Exception:
+            log_pipeline_error(self.logger, "SILVER", "transforming bronze to silver", start_time)
+            raise
 
+        valid_count = base.filter(F.col("is_valid")).count()
+        invalid_count = base.filter(~F.col("is_valid")).count()
+        log_pipeline_end(
+            self.logger,
+            "SILVER",
+            f"total={base.count()} valid={valid_count} invalid={invalid_count}",
+            start_time,
+        )
+        return base
+
+    def _transform_impl(self, bronze_df: DataFrame, write: bool) -> DataFrame:
         ordered = bronze_df.withColumn(
             "seg_row",
             F.row_number().over(Window.partitionBy("file_name").orderBy(F.col("seg_order")))
@@ -138,6 +159,7 @@ class SilverLayer:
         base = base.withColumn("coverage_start_date", self._format_date("cov_start_raw"))
         base = base.withColumn("coverage_end_date", self._format_date("cov_end_raw"))
         base = base.join(self._extract_hd_data(members_df), ["file_name", "seg_start"], "left")
+        base = base.join(self._extract_ref_group_data(members_df), ["file_name", "seg_start"], "left")
         base = base.join(self._extract_eb_data(members_df), ["file_name", "seg_start"], "left")
         base = base.withColumn(
             "coverage_start_date",
@@ -201,10 +223,6 @@ class SilverLayer:
             table_path = self.config["layers"]["silver"]["path"]
             self._write(base, table_path)
 
-        valid_count = base.filter(F.col("is_valid")).count()
-        invalid_count = base.filter(~F.col("is_valid")).count()
-        log_pipeline_end(self.logger, "SILVER", f"total={base.count()} valid={valid_count} invalid={invalid_count}")
-
         return base
 
     def _write(self, df: DataFrame, path: str) -> None:
@@ -245,6 +263,18 @@ class SilverLayer:
         return hd_seg.groupBy("file_name", "seg_start").agg(
             F.max(F.col("elements")[3]).alias("plan_code"),
         ).withColumn("plan_id", F.col("plan_code")).select("file_name", "seg_start", "plan_id")
+
+    def _extract_ref_group_data(self, members_df):
+        # REF*1L*<group number> - X12 834 standard Group or Policy Number
+        # reference, emitted per-subscriber/dependent by the generator so
+        # group_id is populated from real file content (not a hardcoded
+        # default).
+        ref_seg = members_df.filter(
+            (F.col("segment_id") == "REF") & (F.col("elements")[1] == "1L")
+        )
+        return ref_seg.groupBy("file_name", "seg_start").agg(
+            F.max(F.col("elements")[2]).alias("group_id"),
+        )
 
     def _extract_eb_data(self, members_df):
         eb_seg = members_df.filter(F.col("segment_id") == "EB")
@@ -365,7 +395,7 @@ class SilverLayer:
                     ),
                 ),
                 F.when(
-                    ~F.col("plan_id").isin(list({"GOLD", "SILVER", "BRONZE", "PLATINUM", "HDHP", "EPO", "PPO", "HMO"})),
+                    ~F.col("plan_id").isin(list({"100", "101", "102", "103", "104", "105", "106", "107"})),
                     F.concat(F.lit("Unknown plan: "), F.col("plan_id")),
                 ),
             ),

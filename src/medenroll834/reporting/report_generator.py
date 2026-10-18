@@ -11,6 +11,10 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
+from src.medenroll834.common.logging import setup_logging
+
+_LOGGER = setup_logging("report_generator")
+
 # Analytics questions answered from the gold enrollment table (flat) and the
 # OLAP star schema (FACT_ENROLLMENT joined to its dimensions).
 REPORT_QUERIES: List[Tuple[str, str]] = [
@@ -66,6 +70,7 @@ def _run_query(w, warehouse_id, sql):
         resp = w.statement_execution.get_statement(sid)
     if resp.status.state != StatementState.SUCCEEDED:
         err = resp.status.error
+        _LOGGER.error("REPORT | query failed: %s", err.message if err else "unknown")
         raise RuntimeError(f"Query failed: {err.message if err else 'unknown'}")
     cols = [c.name for c in resp.manifest.schema.columns]
     rows = resp.result.data_array or []
@@ -88,18 +93,27 @@ def _table_html(title: str, cols: List[str], rows: List[List]) -> str:
 
 def generate_report(profile=None, warehouse_id=None) -> str:
     """Run all report queries and return a self-contained HTML string."""
+    from src.medenroll834.common.logging import log_pipeline_end, log_pipeline_start
+
+    start_time = log_pipeline_start(_LOGGER, "REPORT", f"running {len(REPORT_QUERIES)} report queries")
     w = _client(profile)
     wid = _warehouse_id(w, warehouse_id)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     sections = []
+    failed = 0
     for title, sql in REPORT_QUERIES:
         try:
             cols, rows = _run_query(w, wid, sql)
             sections.append(_table_html(title, cols, rows))
         except Exception as exc:  # noqa: BLE001
+            failed += 1
+            _LOGGER.warning("REPORT | section %r failed, rendering inline error: %s", title, exc)
             sections.append(f"<h2>{title}</h2><p style='color:red'>Error: {exc}</p>")
 
+    log_pipeline_end(
+        _LOGGER, "REPORT", f"sections={len(REPORT_QUERIES)} failed={failed}", start_time
+    )
     return (
         "<!DOCTYPE html><html><head><meta charset='utf-8'>"
         "<title>MedEnroll834 Enrollment Report</title>"
@@ -120,8 +134,13 @@ def ask_genie(space_id: str, question: str, profile=None) -> Dict:
     Returns the final message payload. Best-effort: raises if Genie API or
     space is unavailable.
     """
-    w = _client(profile)
-    conv = w.genie.start_conversation_and_wait(space_id=space_id, content=question)
+    _LOGGER.info("GENIE | asking space=%s question=%r", space_id, question)
+    try:
+        w = _client(profile)
+        conv = w.genie.start_conversation_and_wait(space_id=space_id, content=question)
+    except Exception:
+        _LOGGER.exception("GENIE | conversation failed for space=%s", space_id)
+        raise
     out = {"question": question, "attachments": []}
     for att in (conv.attachments or []):
         if att.text:
