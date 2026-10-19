@@ -108,6 +108,11 @@ body {
     font-weight: bold;
     color: #333333;
 }
+.cover-author-links {
+    margin-top: 3pt;
+    font-size: 9pt;
+    color: #888888;
+}
 
 /* ---------------------------------------------------------------- */
 /* Table of contents                                                  */

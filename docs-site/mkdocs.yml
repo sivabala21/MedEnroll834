@@ -3,7 +3,7 @@ site_description: >-
   Modern Distributed Data Platform for Growing Data â€” a healthcare X12 834
   enrollment modernization built on PySpark, Delta Lake, Databricks, Airflow,
   and PostgreSQL.
-site_author: MedEnroll834 Project
+site_author: Sivabala Selvam
 repo_name: MedEnroll834
 repo_url: https://github.com/sivabala21/MedEnroll834
 edit_uri: edit/main/docs-site/docs/
@@ -72,7 +72,11 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/sivabala21/MedEnroll834
+      link: https://github.com/sivabala21
+      name: GitHub — sivabala21
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/sivabala-s/
+      name: LinkedIn — sivabala-s
 
 nav:
   - Home: index.md

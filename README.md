@@ -150,7 +150,15 @@ code:
 - 📖 **[Live documentation site](https://sivabala21.github.io/MedEnroll834/)** — browsable, searchable MkDocs site covering architecture, setup, every pipeline layer, orchestration, data quality, analytics, security, testing, CI/CD, and operational runbooks.
 - 📄 **[Downloadable PDF book](docs-site/pdfbook/MedEnroll834-Documentation-External.pdf)** — the same content as a single, O'Reilly-styled technical book for offline reading or sharing.
 
+## Author
+
+**Sivabala Selvam**
+
+[![GitHub](https://img.shields.io/badge/GitHub-sivabala21-181717?logo=github)](https://github.com/sivabala21)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-sivabala--s-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sivabala-s/)
+
 ## License
 
 [MIT](LICENSE)
+
 

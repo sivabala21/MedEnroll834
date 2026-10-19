@@ -54,6 +54,7 @@ MAX_IMG_DIMENSION = 1600
 
 BOOK_TITLE = "MedEnroll834"
 BOOK_AUTHOR = "SIVABALA SELVAM"
+BOOK_AUTHOR_LINKS = "github.com/sivabala21 &middot; linkedin.com/in/sivabala-s"
 
 # docs/*.md is the single, public source of truth read by both the live
 # GitHub Pages site (mkdocs.yml's nav) and the external PDF build - it must
@@ -197,7 +198,9 @@ def build_cover_html(audience: str) -> str:
   <div class="cover-meta">
     <div>PySpark &middot; Delta Lake &middot; Databricks &middot; Apache Airflow &middot; PostgreSQL</div>
     <div class="cover-author">{BOOK_AUTHOR}</div>
+    <div class="cover-author-links">{BOOK_AUTHOR_LINKS}</div>
   </div>
+
 </div>
 <pdf:nextpage />
 """

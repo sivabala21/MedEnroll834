@@ -65,10 +65,18 @@ this one business module.
 - [Modern Architecture](04-modern-architecture.md)
 - [End-to-End Execution Runbook](33-end-to-end-execution.md)
 
+### Author
+
+**Sivabala Selvam**
+
+- GitHub: [github.com/sivabala21](https://github.com/sivabala21)
+- LinkedIn: [linkedin.com/in/sivabala-s](https://www.linkedin.com/in/sivabala-s/)
+
 ---
 
 !!! tip "Using this chapter"
     Copy the sections above directly into a project's top-level
     `README.md`, a portfolio site project card, or a resume project bullet
     list — they're written to stand alone outside this documentation's context.
+
 
