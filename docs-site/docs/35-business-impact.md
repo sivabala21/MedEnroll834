@@ -2,12 +2,12 @@
 
 ## Velocity
 
-The legacy chain's six-tool handoff (EDI → ECA → .NET → TTK → Bash → W2K,
-see [Chapter 3](03-legacy-architecture.md)) means enrollment changes are
-only as fast as the slowest, most fragile link in that chain. The modern
-pipeline collapses this into a single orchestrated DAG
-(`med834_e2e_pipeline`) with Airflow-managed retries, reducing the number
-of places a delay or failure can silently accumulate. Faster, more
+The legacy chain's six-tool handoff (EDI → ECA → Legacy Programs → SCP →
+Bash → CORE Programs, see [Chapter 3](03-legacy-architecture.md)) means
+enrollment changes are only as fast as the slowest, most fragile link in
+that chain. The modern pipeline collapses this into a single orchestrated
+DAG (`med834_e2e_pipeline`) with Airflow-managed retries, reducing the
+number of places a delay or failure can silently accumulate. Faster, more
 predictable enrollment processing means coverage is active sooner — which
 matters directly to members submitting claims against a plan that hasn't
 finished loading yet.
@@ -28,13 +28,14 @@ applied consistently across every record — rather than variety handling
 being spread implicitly across 6 different tools' individual quirks —
 means a new plan code, relationship type, or malformed field is caught and
 explained (`validation_errors`) in one place, by one team, instead of
-surfacing as an opaque downstream FACETS load failure.
+surfacing as an opaque downstream CORE System load failure.
 
 ## Operational cost reduction
 
 - **Fewer tools to license, patch, and staff** — Tidal, SSIS, DataStage,
-  .NET, TTK, and Bash scripts are five-to-six separate operational
-  surfaces; the modern stack is Airflow + Databricks + PostgreSQL.
+  Legacy Programs, SCP, and Bash scripts are five-to-six separate
+  operational surfaces; the modern stack is Airflow + Databricks +
+  PostgreSQL.
 - **Unified observability** reduces mean-time-to-diagnosis: a structured
   log line (`START SILVER | ... `) and a per-run summary dict
   (`silver_invalid=12`) replace grepping six different tool-specific log
@@ -45,8 +46,8 @@ surfacing as an opaque downstream FACETS load failure.
 
 ## New analytical capability (not present in the legacy system at all)
 
-The legacy flow terminates at a FACETS keyword-file load — there is no
-historical reporting, BI, or ad hoc analytics path. The modern platform
+The legacy flow terminates at a CORE System keyword-file load — there is
+no historical reporting, BI, or ad hoc analytics path. The modern platform
 adds, at no cost to the operational path:
 
 - An **OLAP star schema** (`FACT_ENROLLMENT` + 5 dimensions,
@@ -70,4 +71,3 @@ source file via a transaction identifier
 [Chapter 24](24-observability.md)) — a stronger audit trail than the
 legacy proprietary intermediate format allows, which matters directly for
 HIPAA-adjacent compliance reviews (see [Chapter 29](29-security.md)).
-
