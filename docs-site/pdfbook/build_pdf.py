@@ -33,6 +33,15 @@ DOCS_DIR = DOCS_SITE / "docs"
 PDFBOOK_DIR = DOCS_SITE / "pdfbook"
 MERMAID_DIR = PDFBOOK_DIR / "build" / "mermaid"
 IMG_CACHE_DIR = PDFBOOK_DIR / "build" / "img_cache"
+# Chapters that discuss the legacy system/client context have a sensitive
+# variant that must NEVER live under docs/ (docs/ is served verbatim by the
+# public GitHub Pages site and is the public repo's working tree - anything
+# there is public, nav-listed or not). The sensitive content instead lives
+# only under pdfbook/internal_source/, which is read solely by this script
+# for --audience internal, and is itself git-ignored (see .gitignore) so it
+# never reaches the public GitHub repository at all.
+INTERNAL_SOURCE_DIR = PDFBOOK_DIR / "internal_source"
+
 
 # Several screenshots/exports under docs/assets/img/ exceed xhtml2pdf's
 # comfortable raster size (some are 8000+ px on a side). Rather than feeding
@@ -46,13 +55,18 @@ MAX_IMG_DIMENSION = 1600
 BOOK_TITLE = "MedEnroll834"
 BOOK_AUTHOR = "SIVABALA SELVAM"
 
-# Chapter 02 (Business Problem) has two variants: the internal one names the
-# client (AmeriHealth Caritas) and the real legacy toolchain; the external
-# one is fully generalized for public/portfolio use. Everything else is
-# identical between the two builds.
-BUSINESS_PROBLEM_FILE = {
-    "internal": "02-business-problem.md",
-    "external": "02-business-problem-external.md",
+# docs/*.md is the single, public source of truth read by both the live
+# GitHub Pages site (mkdocs.yml's nav) and the external PDF build - it must
+# never contain a client name or a specific legacy tool name. The internal
+# PDF build additionally overlays a handful of chapters with sensitive
+# content (client context, real legacy toolchain) from INTERNAL_SOURCE_DIR,
+# which lives outside docs/ and is git-ignored, so it is never present in
+# the public repository or public site regardless of mkdocs.yml's nav.
+INTERNAL_ONLY_CHAPTERS = {
+    "02-business-problem.md",
+    "03-legacy-architecture.md",
+    "34-legacy-vs-modern-benchmark.md",
+    "35-business-impact.md",
 }
 BOOK_SUBTITLE = {
     "internal": "Documentation (Internal) \u2014 A Modern Distributed Data Platform for Growing Data",
@@ -73,9 +87,10 @@ def load_nav_chapters(audience: str) -> list[tuple[str, str]]:
     order. The file uses mkdocs-material's custom !!python/name: YAML tags
     for emoji extensions, which yaml.safe_load() can't parse - so extract
     just the `nav:` block as a standalone YAML document instead of loading
-    the whole file. Chapter 02 is swapped for the audience-specific variant
-    (02-business-problem.md for internal, 02-business-problem-external.md
-    for external)."""
+    the whole file. Filenames are returned unchanged here regardless of
+    audience; build_chapter_html() decides whether to read a given filename
+    from docs/ (always, for external) or from INTERNAL_SOURCE_DIR (for
+    internal, only for INTERNAL_ONLY_CHAPTERS)."""
     mkdocs_yml_text = (DOCS_SITE / "mkdocs.yml").read_text(encoding="utf-8")
     nav_match = re.search(r"^nav:\n((?:.*\n?)*)", mkdocs_yml_text, re.MULTILINE)
     if not nav_match:
@@ -89,10 +104,10 @@ def load_nav_chapters(audience: str) -> list[tuple[str, str]]:
                 continue
             for page in pages:
                 for _title, filename in page.items():
-                    if filename == "02-business-problem.md":
-                        filename = BUSINESS_PROBLEM_FILE[audience]
                     chapters.append((section_title, filename))
     return chapters
+
+
 
 
 
@@ -216,8 +231,23 @@ def markdown_to_html(md_text: str) -> str:
     )
 
 
-def build_chapter_html(section_title: str, filename: str, is_first_in_section: bool) -> str:
-    chapter_path = DOCS_DIR / filename
+def build_chapter_html(section_title: str, filename: str, is_first_in_section: bool, audience: str) -> str:
+    # For audience=internal, chapters in INTERNAL_ONLY_CHAPTERS are read from
+    # pdfbook/internal_source/ (sensitive client/legacy-toolchain content,
+    # git-ignored, never in docs/). Every other chapter, and every chapter
+    # for audience=external, is read from docs/ - the single public source
+    # of truth also served by the live GitHub Pages site.
+    if audience == "internal" and filename in INTERNAL_ONLY_CHAPTERS:
+        source_dir = INTERNAL_SOURCE_DIR
+        if not (source_dir / filename).exists():
+            raise FileNotFoundError(
+                f"Internal PDF build requires {source_dir / filename} - "
+                f"see docs-site/pdfbook/README.md for how to populate "
+                f"internal_source/ (never commit this directory's contents)."
+            )
+    else:
+        source_dir = DOCS_DIR
+    chapter_path = source_dir / filename
     stem = chapter_path.stem
     md_text = chapter_path.read_text(encoding="utf-8")
     md_text = replace_mermaid_with_images(md_text, stem)
@@ -249,7 +279,7 @@ def build_full_html(audience: str) -> str:
     for section_title, filename in chapters:
         is_first = section_title not in seen_sections
         seen_sections.add(section_title)
-        parts.append(build_chapter_html(section_title, filename, is_first))
+        parts.append(build_chapter_html(section_title, filename, is_first, audience))
     body = "\n".join(parts)
     css = (PDFBOOK_DIR / "book.css").read_text(encoding="utf-8")
     fonts_dir = (PDFBOOK_DIR / "fonts").resolve().as_posix()
@@ -261,6 +291,7 @@ def build_full_html(audience: str) -> str:
 <title>{BOOK_TITLE} — {BOOK_SUBTITLE[audience]}</title>
 <style>
 {css}
+
 </style>
 </head>
 <body>
