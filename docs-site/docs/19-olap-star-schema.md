@@ -88,6 +88,14 @@ dim_txn_src = (
     .withColumn("FILE_NAME", F.col("file_name"))
     .withColumn("SENDER_ID", F.lit("SENDERID"))
     .withColumn("RECEIVED_TIMESTAMP", F.current_timestamp())
+)
+dim_txn_src.write.format("delta").mode("overwrite").option("mergeSchema", "true") \
+    .saveAsTable(f"{GOLD}.dim_transaction_source")
+```
+
+`xxhash64` deterministically derives a numeric `TXN_ID` from the file name,
+so the same file always maps to the same transaction-source key across
+runs without needing a separate sequence/lookup table.
 
 ## `FACT_ENROLLMENT` — resolving surrogate keys
 
@@ -154,14 +162,8 @@ print(q("""
 See [Chapter 27](27-databricks-sql-dashboard.md) for how this star schema
 is queried by the HTML report and Genie.
 
-)
-```
-
-`xxhash64` deterministically derives a numeric `TXN_ID` from the file name,
-so the same file always maps to the same transaction-source key across
-runs without needing a separate sequence/lookup table.
-
 ## Verified fact table evidence
 
 ![Fact table verification evidence](assets/img/Fact table evidence.png)
+
 

@@ -226,11 +226,17 @@ code {
     /* Long lines wrap inside the box instead of being clipped/pushed past
        its border ("code text out of box") - xhtml2pdf honors CSS2.1
        white-space/word-wrap on <pre>, so this is the actual fix rather
-       than relying on -pdf-keep-in-frame-mode alone. */
+       than relying on -pdf-keep-in-frame-mode. No -pdf-keep-in-frame-mode
+       here: that mode squeezes the ENTIRE block (font + line-height) down
+       to whatever vertical room is left on the current page rather than
+       flowing the overflow onto the next page - which is what made a
+       16-line repo-tree code block render as an unreadable postage stamp
+       whenever a heading happened to land a couple of lines from the page
+       bottom. Letting xhtml2pdf break the block across pages naturally
+       keeps a consistent, readable font size instead. */
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    -pdf-keep-in-frame-mode: shrink;
 }
 .codehilite pre {
     border: none;
@@ -241,6 +247,7 @@ code {
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
+
 
 /* ---------------------------------------------------------------- */
 /* Tables                                                             */
@@ -287,6 +294,13 @@ blockquote {
     margin: 8pt 0;
     color: #555555;
     font-size: 9.5pt;
+    /* Chapters frequently open with "> Source: ..." immediately followed
+       by a diagram image (see Ch. 9, 19). Without this, xhtml2pdf can
+       leave the heading + Source line on one page and push the image
+       alone onto the next, mostly-empty page. Keeping the blockquote
+       glued to whatever follows it keeps that intro + image together as
+       one visual unit. */
+    -pdf-keep-with-next: true;
 }
 .admonition {
     border-left: 3pt solid #B91C1C;
